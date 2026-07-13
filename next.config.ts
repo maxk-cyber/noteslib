@@ -18,12 +18,6 @@ const nextConfig: NextConfig = {
     : {}),
   images: {
     unoptimized: isPages,
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-      },
-    ],
   },
 };
 

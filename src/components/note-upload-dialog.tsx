@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useState, type FormEvent } from "react";
+import { IconPicker } from "@/components/icon-picker";
+import { DEFAULT_NOTE_ICON } from "@/lib/note-icons";
 
 type NoteUploadDialogProps = {
   open: boolean;
@@ -11,6 +13,7 @@ type NoteUploadDialogProps = {
     title: string;
     author: string;
     content: string;
+    icon: string;
   }) => Promise<void>;
 };
 
@@ -37,6 +40,7 @@ export function NoteUploadDialog({
           title: String(formData.get("title") ?? ""),
           author: String(formData.get("author") ?? ""),
           content: String(formData.get("content") ?? ""),
+          icon: String(formData.get("icon") ?? DEFAULT_NOTE_ICON),
         };
 
         if (pagesMode && onLocalSave) {
@@ -104,6 +108,8 @@ export function NoteUploadDialog({
               placeholder="Your name"
             />
           </label>
+
+          <IconPicker />
 
           <label className="flex flex-col gap-1.5">
             <span className="text-xs tracking-wider text-neutral-500 uppercase">

@@ -11,6 +11,7 @@ const DEMO_NOTES = [
   {
     title: "Welcome",
     author: "Noteslib",
+    icon: "sparkles",
     content: `# Welcome to Noteslib
 
 Write in **markdown**. Read in *preview*.

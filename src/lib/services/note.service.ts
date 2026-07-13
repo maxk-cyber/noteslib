@@ -15,6 +15,7 @@ export async function createNote(input: CreateNoteInput) {
       title: input.title,
       author: input.author,
       content: input.content.trim(),
+      icon: input.icon,
     },
   });
 }

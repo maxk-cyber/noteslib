@@ -20,6 +20,7 @@ export type NoteItem = {
   title: string;
   author: string;
   content: string;
+  icon: string;
   createdAt: string | Date;
 };
 
@@ -89,7 +90,12 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
     isPages && isLocalNoteId(id) ? `/read?id=${id}` : `/${id}`;
 
   const handleLocalSave = useCallback(
-    async (data: { title: string; author: string; content: string }) => {
+    async (data: {
+      title: string;
+      author: string;
+      content: string;
+      icon: string;
+    }) => {
       saveClientNote(data);
       await refresh();
     },
@@ -131,7 +137,7 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
                 <NoteHoverThumb
                   key={note.id}
                   href={noteHref(note.id)}
-                  noteId={note.id}
+                  icon={note.icon}
                   title={note.title}
                   preview={notePreview(note.content)}
                   isActive={activeId === note.id}

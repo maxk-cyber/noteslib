@@ -1,4 +1,5 @@
 import type { NoteItem } from "@/components/notes-library";
+import { DEFAULT_NOTE_ICON, resolveNoteIconName } from "@/lib/note-icons";
 
 const STORAGE_KEY = "noteslib-client-notes";
 
@@ -15,7 +16,11 @@ function readAll(): NoteItem[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as NoteItem[];
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((note) => ({
+      ...note,
+      icon: resolveNoteIconName(note.icon),
+    }));
   } catch {
     return [];
   }
@@ -40,12 +45,14 @@ export function saveClientNote(data: {
   title: string;
   author: string;
   content: string;
+  icon?: string;
 }): NoteItem {
   const note: NoteItem = {
     id: `${LOCAL_NOTE_PREFIX}${crypto.randomUUID()}`,
     title: data.title,
     author: data.author,
     content: data.content,
+    icon: resolveNoteIconName(data.icon),
     createdAt: new Date().toISOString(),
   };
 

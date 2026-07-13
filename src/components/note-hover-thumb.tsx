@@ -1,12 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
+import { NoteIcon } from "@/components/note-icon";
 
 type NoteHoverThumbProps = {
   href: string;
-  noteId: string;
+  icon?: string | null;
   title: string;
   preview: string;
   isActive: boolean;
@@ -15,7 +15,7 @@ type NoteHoverThumbProps = {
 
 export function NoteHoverThumb({
   href,
-  noteId,
+  icon,
   title,
   preview,
   isActive,
@@ -33,20 +33,18 @@ export function NoteHoverThumb({
         onMouseEnter={onHover}
         className="block h-full w-full"
       >
-        <div className="relative h-full w-full overflow-hidden rounded-lg ring-1 ring-emerald-500/20">
-          <Image
-            src={`https://picsum.photos/seed/note-${noteId}/240/240`}
-            alt={title}
-            fill
-            className="object-cover"
-            sizes="120px"
-            unoptimized
+        <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-emerald-950/80 to-neutral-950 ring-1 ring-emerald-500/25">
+          <NoteIcon
+            name={icon}
+            className={`text-emerald-300/90 transition-transform ${
+              isActive ? "h-10 w-10" : "h-6 w-6"
+            }`}
           />
           {isActive && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="absolute inset-0 flex flex-col items-center justify-end bg-emerald-950/65 p-2 text-center"
+              className="absolute inset-0 flex flex-col items-center justify-end bg-emerald-950/75 p-2 text-center"
             >
               <span className="text-[9px] tracking-widest text-emerald-100 uppercase">
                 {title}

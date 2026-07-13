@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GraffitiCursor } from "@/components/graffiti-cursor";
 import { GraffitiTitle } from "@/components/graffiti-title";
 import { MarkdownPreview } from "@/components/markdown-preview";
-import { NoteHeaderVideo } from "@/components/note-header-video";
+import { SectionHeaderShowcase } from "@/components/section-header-showcase";
 import { PaginationBar } from "@/components/pagination-bar";
 import { SectionThumb } from "@/components/section-thumb";
 import { notePreview } from "@/lib/note-preview";
@@ -245,7 +245,7 @@ export function NoteWorkspace({
 
       <div className="px-4 pb-2 md:px-6">
         <div className="mx-auto max-w-6xl">
-          <NoteHeaderVideo
+          <SectionHeaderShowcase
             sectionTitle={activeSection.title}
             hovered={cursorActive}
           />

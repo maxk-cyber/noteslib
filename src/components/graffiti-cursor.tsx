@@ -7,7 +7,13 @@ type GraffitiCursorProps = {
   active: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
   theme?: "red" | "purple" | "yellow" | "green";
+  size?: "default" | "small";
 };
+
+const cursorSizes = {
+  default: { box: 120, offset: 60, icon: "h-5 w-5" },
+  small: { box: 36, offset: 18, icon: "h-3 w-3" },
+} as const;
 
 const cursorColors = {
   red: "bg-red-500",
@@ -20,7 +26,9 @@ export function GraffitiCursor({
   active,
   containerRef,
   theme = "red",
+  size = "default",
 }: GraffitiCursorProps) {
+  const dimensions = cursorSizes[size];
   const [visible, setVisible] = useState(false);
   const cursorX = useSpring(0, { stiffness: 500, damping: 40, mass: 0.6 });
   const cursorY = useSpring(0, { stiffness: 500, damping: 40, mass: 0.6 });
@@ -30,10 +38,10 @@ export function GraffitiCursor({
     (e: MouseEvent) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      cursorX.set(e.clientX - rect.left - 60);
-      cursorY.set(e.clientY - rect.top - 60);
+      cursorX.set(e.clientX - rect.left - dimensions.offset);
+      cursorY.set(e.clientY - rect.top - dimensions.offset);
     },
-    [containerRef, cursorX, cursorY],
+    [containerRef, cursorX, cursorY, dimensions.offset],
   );
 
   useEffect(() => {
@@ -60,8 +68,15 @@ export function GraffitiCursor({
 
   return (
     <motion.div
-      className={`pointer-events-none absolute top-0 left-0 z-50 flex h-[120px] w-[120px] items-center justify-center rounded-full ${cursorColors[theme]}`}
-      style={{ x: cursorX, y: cursorY, scale, transformOrigin: "center center" }}
+      className={`pointer-events-none absolute top-0 left-0 z-50 flex items-center justify-center rounded-full ${cursorColors[theme]}`}
+      style={{
+        x: cursorX,
+        y: cursorY,
+        scale,
+        width: dimensions.box,
+        height: dimensions.box,
+        transformOrigin: "center center",
+      }}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -69,7 +84,7 @@ export function GraffitiCursor({
         height="16"
         viewBox="0 0 16 16"
         fill="none"
-        className="h-5 w-5"
+        className={dimensions.icon}
         aria-hidden
       >
         <path

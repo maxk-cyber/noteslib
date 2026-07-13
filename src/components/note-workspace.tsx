@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GraffitiCursor } from "@/components/graffiti-cursor";
 import { GraffitiTitle } from "@/components/graffiti-title";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import { NoteHeaderVideo } from "@/components/note-header-video";
 import { PaginationBar } from "@/components/pagination-bar";
 import { SectionThumb } from "@/components/section-thumb";
 import { notePreview } from "@/lib/note-preview";
@@ -64,6 +65,7 @@ export function NoteWorkspace({
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cursorActive, setCursorActive] = useState(false);
+  const [editHover, setEditHover] = useState(false);
 
   useEffect(() => {
     setSections(parseNoteSections(content));
@@ -144,9 +146,10 @@ export function NoteWorkspace({
       className="min-h-screen cursor-none bg-[#080808] pt-16 text-white"
     >
       <GraffitiCursor
-        active={cursorActive}
+        active={cursorActive && !(mode === "edit" && editHover)}
         containerRef={viewportRef}
         theme="green"
+        size={mode === "edit" ? "small" : "default"}
       />
 
       <div className="border-b border-neutral-900/80 px-4 py-3 md:px-6">
@@ -238,6 +241,7 @@ export function NoteWorkspace({
         <p className="mt-3 text-xs tracking-[0.3em] text-neutral-500 uppercase">
           {author}
         </p>
+        <NoteHeaderVideo title={title} />
       </div>
 
       <div className="px-4 pb-4 md:px-6">
@@ -375,9 +379,11 @@ export function NoteWorkspace({
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              className="grid gap-4 lg:grid-cols-2"
+              onMouseEnter={() => setEditHover(true)}
+              onMouseLeave={() => setEditHover(false)}
+              className="grid cursor-auto gap-4 lg:grid-cols-2"
             >
-              <div className="rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4">
+              <div className="rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4 cursor-auto">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-[10px] tracking-[0.3em] text-neutral-500 uppercase">
                     Edit section
@@ -394,10 +400,10 @@ export function NoteWorkspace({
                   value={draftRaw}
                   onChange={(event) => setDraftRaw(event.target.value)}
                   rows={18}
-                  className="h-[60vh] w-full resize-none rounded-xl border border-neutral-800 bg-[#060606] p-4 font-mono text-sm leading-relaxed text-neutral-100 outline-none focus:border-emerald-500/40"
+                  className="h-[60vh] w-full cursor-text resize-none rounded-xl border border-neutral-800 bg-[#060606] p-4 font-mono text-sm leading-relaxed text-neutral-100 outline-none focus:border-emerald-500/40"
                 />
               </div>
-              <div className="overflow-auto rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4">
+              <div className="overflow-auto rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4 cursor-auto">
                 <p className="mb-3 text-[10px] tracking-[0.3em] text-neutral-500 uppercase">
                   Live preview
                 </p>

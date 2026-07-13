@@ -149,7 +149,7 @@ export function NoteWorkspace({
         active={cursorActive && !(mode === "edit" && editHover)}
         containerRef={viewportRef}
         theme="green"
-        size={mode === "edit" ? "small" : "default"}
+        size={mode === "edit" ? "tiny" : "default"}
       />
 
       <div className="border-b border-neutral-900/80 px-4 py-3 md:px-6">
@@ -241,12 +241,16 @@ export function NoteWorkspace({
         <p className="mt-3 text-xs tracking-[0.3em] text-neutral-500 uppercase">
           {author}
         </p>
-        <NoteHeaderVideo title={title} />
       </div>
 
-      <div className="px-4 pb-4 md:px-6">
+      <div className="px-4 pb-2 md:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-3 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto">
+          <NoteHeaderVideo
+            sectionTitle={activeSection.title}
+            sectionPreview={notePreview(activeSection.body)}
+          />
+
+          <div className="mb-3 mt-4 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto">
             {pagedStrip.items.map((section) => {
               const index = sections.findIndex((item) => item.id === section.id);
               return (

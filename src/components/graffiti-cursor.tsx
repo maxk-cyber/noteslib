@@ -7,12 +7,13 @@ type GraffitiCursorProps = {
   active: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
   theme?: "red" | "purple" | "yellow" | "green";
-  size?: "default" | "small";
+  size?: "default" | "small" | "tiny";
 };
 
 const cursorSizes = {
   default: { box: 120, offset: 60, icon: "h-5 w-5" },
   small: { box: 36, offset: 18, icon: "h-3 w-3" },
+  tiny: { box: 18, offset: 9, icon: "h-2 w-2" },
 } as const;
 
 const cursorColors = {

@@ -1,18 +1,22 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { assetPath } from "@/lib/asset-path";
 
 type NoteHeaderVideoProps = {
-  title: string;
+  sectionTitle: string;
+  sectionPreview?: string;
 };
 
-export function NoteHeaderVideo({ title }: NoteHeaderVideoProps) {
+export function NoteHeaderVideo({
+  sectionTitle,
+  sectionPreview,
+}: NoteHeaderVideoProps) {
+  const displayTitle = sectionTitle.toUpperCase();
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      layout
       className="relative mx-auto mt-5 h-24 w-full max-w-xl overflow-hidden rounded-2xl border border-emerald-500/10 md:h-28"
       aria-hidden
     >
@@ -27,10 +31,27 @@ export function NoteHeaderVideo({ title }: NoteHeaderVideoProps) {
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#080808] via-[#080808]/20 to-[#080808]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#080808_88%)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-2 text-center">
-        <span className="text-[9px] tracking-[0.35em] text-emerald-300/50 uppercase">
-          {title}
-        </span>
+
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={sectionTitle}
+            initial={{ opacity: 0, y: 10, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -10, filter: "blur(6px)" }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="flex flex-col items-center gap-1"
+          >
+            <span className="text-[10px] tracking-[0.4em] text-emerald-300/90 uppercase md:text-xs">
+              {displayTitle}
+            </span>
+            {sectionPreview && (
+              <span className="line-clamp-2 max-w-md text-[8px] leading-snug tracking-[0.15em] text-emerald-100/45 uppercase">
+                {sectionPreview}
+              </span>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </motion.div>
   );

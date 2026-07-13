@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 type NoteHoverThumbProps = {
-  id: string;
+  href: string;
+  noteId: string;
   title: string;
   preview: string;
   isActive: boolean;
@@ -13,7 +14,8 @@ type NoteHoverThumbProps = {
 };
 
 export function NoteHoverThumb({
-  id,
+  href,
+  noteId,
   title,
   preview,
   isActive,
@@ -27,13 +29,13 @@ export function NoteHoverThumb({
       className="shrink-0 p-1 md:p-1.5"
     >
       <Link
-        href={`/${id}`}
+        href={href}
         onMouseEnter={onHover}
         className="block h-full w-full"
       >
         <div className="relative h-full w-full overflow-hidden rounded-lg ring-1 ring-emerald-500/20">
           <Image
-            src={`https://picsum.photos/seed/note-${id}/240/240`}
+            src={`https://picsum.photos/seed/note-${noteId}/240/240`}
             alt={title}
             fill
             className="object-cover"

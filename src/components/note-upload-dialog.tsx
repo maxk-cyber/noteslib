@@ -6,12 +6,20 @@ type NoteUploadDialogProps = {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
+  pagesMode?: boolean;
+  onLocalSave?: (data: {
+    title: string;
+    author: string;
+    content: string;
+  }) => Promise<void>;
 };
 
 export function NoteUploadDialog({
   open,
   onClose,
   onSaved,
+  pagesMode = false,
+  onLocalSave,
 }: NoteUploadDialogProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,19 +33,24 @@ export function NoteUploadDialog({
       try {
         const form = e.currentTarget;
         const formData = new FormData(form);
+        const payload = {
+          title: String(formData.get("title") ?? ""),
+          author: String(formData.get("author") ?? ""),
+          content: String(formData.get("content") ?? ""),
+        };
 
-        const res = await fetch("/api/notes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: formData.get("title"),
-            author: formData.get("author"),
-            content: formData.get("content"),
-          }),
-        });
+        if (pagesMode && onLocalSave) {
+          await onLocalSave(payload);
+        } else {
+          const res = await fetch("/api/notes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Failed to save note");
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "Failed to save note");
+        }
 
         form.reset();
         onSaved();
@@ -48,7 +61,7 @@ export function NoteUploadDialog({
         setSaving(false);
       }
     },
-    [onClose, onSaved],
+    [onClose, onLocalSave, onSaved, pagesMode],
   );
 
   if (!open) return null;
@@ -109,6 +122,12 @@ export function NoteUploadDialog({
             Supports markdown, colored HTML spans, and mermaid diagrams inside{" "}
             <code className="text-neutral-500">```mermaid</code> fences. Notes
             open in preview mode when you read them.
+            {pagesMode && (
+              <>
+                {" "}
+                On GitHub Pages, new notes are saved in this browser only.
+              </>
+            )}
           </p>
 
           {error && <p className="text-sm text-red-400">{error}</p>}

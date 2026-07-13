@@ -1,10 +1,11 @@
 import { CrowdCanvas } from "@/components/crowd-canvas";
+import { assetPath } from "@/lib/asset-path";
 
 export function CrowdBackdrop() {
   return (
     <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
       <CrowdCanvas
-        src="/images/peeps/all-peeps.png"
+        src={assetPath("/images/peeps/all-peeps.png")}
         rows={15}
         cols={7}
         speedMin={0.4}

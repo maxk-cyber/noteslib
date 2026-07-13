@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useSpring, useTransform } from "framer-motion";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MarkdownPreview } from "@/components/markdown-preview";
 
@@ -10,7 +10,7 @@ type RollingSectionScrollProps = {
   onClose: () => void;
 };
 
-const RADIUS = 520;
+const RADIUS = 420;
 
 export function RollingSectionScroll({
   sectionTitle,
@@ -19,24 +19,26 @@ export function RollingSectionScroll({
 }: RollingSectionScrollProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const count = Math.max(faces.length, 1);
-  const step = count > 1 ? 180 / count : 0;
+  const step = 180 / count;
   const totalRotation = (count - 1) * step;
   const [progress, setProgress] = useState(0);
 
-  const springProgress = useSpring(progress, {
-    stiffness: 120,
-    damping: 28,
+  const progressMV = useMotionValue(0);
+  const smoothProgress = useSpring(progressMV, {
+    stiffness: 110,
+    damping: 24,
     mass: 0.35,
   });
-  const rotation = useTransform(springProgress, [0, 1], [0, totalRotation]);
-  const hintOpacity = useTransform(springProgress, [0, 0.12], [1, 0]);
+  const rotation = useTransform(smoothProgress, [0, 1], [0, totalRotation]);
+  const hintOpacity = useTransform(smoothProgress, [0, 0.12], [1, 0]);
 
-  const nudge = useCallback(
-    (delta: number) => {
-      setProgress((value) => Math.min(1, Math.max(0, value + delta)));
-    },
-    [],
-  );
+  useEffect(() => {
+    progressMV.set(progress);
+  }, [progress, progressMV]);
+
+  const nudge = useCallback((delta: number) => {
+    setProgress((value) => Math.min(1, Math.max(0, value + delta)));
+  }, []);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -100,7 +102,7 @@ export function RollingSectionScroll({
         </button>
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+      <div className="relative min-h-0 flex-1">
         <motion.p
           style={{ opacity: hintOpacity }}
           className="pointer-events-none absolute top-4 right-0 left-0 z-10 text-center text-[10px] tracking-[0.3em] text-neutral-600 uppercase"
@@ -108,34 +110,38 @@ export function RollingSectionScroll({
           Scroll wheel to roll · ↑↓ arrows · Esc to exit
         </motion.p>
 
-        <div className="flex h-full items-center justify-center px-4 py-6 md:px-10">
+        <div className="flex h-full items-center justify-center px-4 py-6 md:px-8">
           <div
-            className="relative h-[min(74vh,780px)] w-full max-w-5xl"
-            style={{ perspective: 1200, perspectiveOrigin: "50% 42%" }}
+            className="relative h-[min(70vh,720px)] w-full max-w-5xl"
+            style={{
+              perspective: 1000,
+              perspectiveOrigin: "50% 50%",
+              WebkitPerspective: 1000,
+            }}
           >
             <motion.div
               style={{
                 rotateX: rotation,
                 transformStyle: "preserve-3d",
+                WebkitTransformStyle: "preserve-3d",
               }}
               className="relative h-full w-full"
             >
               {faces.map((face, index) => (
                 <div
                   key={`face-${index}`}
-                  className="absolute inset-0 flex items-center justify-center"
+                  className="absolute inset-0 flex items-center justify-center px-4 md:px-8"
                   style={{
                     transform: `rotateX(${-index * step}deg) translateZ(${RADIUS}px)`,
                     backfaceVisibility: "hidden",
                     WebkitBackfaceVisibility: "hidden",
                   }}
                 >
-                  <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-2xl border border-neutral-800/60 bg-neutral-950/95 px-6 py-8 shadow-[0_0_80px_-20px_rgba(0,0,0,0.9)] md:px-10 md:py-10">
-                    <MarkdownPreview
-                      content={face}
-                      className="max-w-none [&_h3]:mt-0 [&_p]:mb-4 [&_p]:text-base [&_p]:leading-relaxed md:[&_p]:text-lg [&_table]:my-4 [&_td]:py-3 [&_td]:text-sm md:[&_td]:text-base [&_th]:py-3 [&_th]:text-xs"
-                    />
-                  </div>
+                  <MarkdownPreview
+                    variant="face3d"
+                    content={face}
+                    className="max-h-full w-full max-w-4xl text-center [transform-style:preserve-3d]"
+                  />
                 </div>
               ))}
             </motion.div>

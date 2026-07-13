@@ -1,6 +1,6 @@
 "use client";
 
-import { Highlighter } from "lucide-react";
+import { Highlighter, Paperclip } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { HighlightColorWheel } from "@/components/highlight-color-wheel";
 import {
@@ -8,6 +8,12 @@ import {
   buildHighlightMarkClose,
   buildHighlightMarkOpen,
 } from "@/lib/highlight-colors";
+import {
+  fileToAttachmentMarkdown,
+  filesFromClipboard,
+  filesFromInput,
+  insertTextAtCursor,
+} from "@/lib/note-attachments";
 
 type MarkdownEditorProps = {
   value: string;
@@ -37,9 +43,12 @@ export function MarkdownEditor({
   className,
 }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [highlightColor, setHighlightColor] = useState<string>(
     DEFAULT_HIGHLIGHT_COLOR,
   );
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [attaching, setAttaching] = useState(false);
 
   const applyWrap = useCallback(
     (before: string, after: string, placeholder: string) => {
@@ -60,6 +69,43 @@ export function MarkdownEditor({
     [onChange],
   );
 
+  const attachFiles = useCallback(
+    async (files: File[]) => {
+      if (files.length === 0) return;
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      setAttaching(true);
+      setAttachmentError(null);
+
+      try {
+        let current = value;
+        let start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+
+        for (const file of files) {
+          const markdown = await fileToAttachmentMarkdown(file);
+          const result = insertTextAtCursor(current, markdown, start, end);
+          current = result.next;
+          start = result.cursorStart;
+        }
+
+        onChange(current);
+        requestAnimationFrame(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start, start);
+        });
+      } catch (error) {
+        setAttachmentError(
+          error instanceof Error ? error.message : "Could not attach file.",
+        );
+      } finally {
+        setAttaching(false);
+      }
+    },
+    [onChange, value],
+  );
+
   const highlight = useCallback(() => {
     applyWrap(
       buildHighlightMarkOpen(highlightColor),
@@ -67,6 +113,25 @@ export function MarkdownEditor({
       "highlighted text",
     );
   }, [applyWrap, highlightColor]);
+
+  const onPaste = useCallback(
+    (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const files = filesFromClipboard(event.clipboardData);
+      if (files.length === 0) return;
+      event.preventDefault();
+      void attachFiles(files);
+    },
+    [attachFiles],
+  );
+
+  const onFileInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = filesFromInput(event.target.files);
+      void attachFiles(files);
+      event.target.value = "";
+    },
+    [attachFiles],
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -95,15 +160,39 @@ export function MarkdownEditor({
           <Highlighter className="h-3.5 w-3.5" />
           Highlight
         </button>
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={attaching}
+          className="flex items-center gap-1.5 rounded-full border border-neutral-700 bg-neutral-900/60 px-3 py-1.5 text-[10px] tracking-[0.2em] text-neutral-300 uppercase transition-colors hover:border-emerald-500/40 hover:text-emerald-300 disabled:opacity-40"
+          title="Attach image or file"
+        >
+          <Paperclip className="h-3.5 w-3.5" />
+          {attaching ? "Attaching…" : "Attach"}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={onFileInputChange}
+        />
+
         <span className="text-[10px] tracking-wider text-neutral-600">
-          Saved in markdown when you Apply / Save
+          Paste or attach · Apply / Save to keep
         </span>
       </div>
+
+      {attachmentError && (
+        <p className="text-xs text-red-400">{attachmentError}</p>
+      )}
 
       <textarea
         ref={textareaRef}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onPaste={onPaste}
         rows={18}
         className={
           className ??

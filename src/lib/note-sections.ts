@@ -133,6 +133,10 @@ function isTableLine(line: string) {
   return trimmed.includes("|") || /^\|?[\s:|-]+\|?\s*$/.test(trimmed);
 }
 
+function isTableSeparator(line: string) {
+  return /^\|?[\s:|-]+\|?\s*$/.test(line.trim());
+}
+
 function splitMarkdownBlocks(text: string): string[] {
   const blocks: string[] = [];
   const lines = text.split("\n");
@@ -165,6 +169,19 @@ function splitMarkdownBlocks(text: string): string[] {
   return blocks.map((block) => block.trim()).filter(Boolean);
 }
 
+function tableToScrollFaces(tableBlock: string): string[] {
+  const lines = tableBlock.split("\n").filter((line) => line.trim());
+  const dataLines = lines.filter((line) => !isTableSeparator(line));
+  if (dataLines.length <= 2) return [tableBlock];
+
+  const header = dataLines[0];
+  const separator =
+    lines.find((line) => isTableSeparator(line)) ?? "| --- | --- | --- |";
+  const rows = dataLines.slice(1);
+
+  return rows.map((row) => [header, separator, row].join("\n"));
+}
+
 /** Markdown chunks for 3D scroll — each face is a rendered preview panel. */
 export function sectionScrollFaces(body: string): string[] {
   const trimmed = body.trim();
@@ -192,7 +209,7 @@ export function sectionScrollFaces(body: string): string[] {
         faces.push(buffer.trim());
         buffer = "";
       }
-      faces.push(block);
+      faces.push(...tableToScrollFaces(block));
       continue;
     }
 

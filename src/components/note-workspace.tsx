@@ -22,6 +22,7 @@ import { notePreview } from "@/lib/note-preview";
 import { resolveTitleColor } from "@/lib/note-colors";
 import { usePersistedCursorSize, useCtrlWheelCursorResize } from "@/lib/use-persisted-cursor-size";
 import { RollingSectionScroll } from "@/components/rolling-section-scroll";
+import { ZoomPanViewport } from "@/components/zoom-pan-viewport";
 import {
   assembleNoteSections,
   paginate,
@@ -508,6 +509,11 @@ export function NoteWorkspace({
                   <h2 className="text-2xl font-medium text-white md:text-3xl">
                     {activeSection.title}
                   </h2>
+                  {zoom > 1 && (
+                    <p className="mt-1 text-[10px] tracking-wider text-neutral-600">
+                      Drag to pan zoomed content
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -533,16 +539,12 @@ export function NoteWorkspace({
                 </div>
               </div>
 
-              <motion.div
-                animate={{ scale: zoom }}
-                transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                className="origin-top"
-              >
+              <ZoomPanViewport zoom={zoom} resetKey={activeSection.id}>
                 <MarkdownPreview
                   content={activeSection.raw}
                   className="max-w-none"
                 />
-              </motion.div>
+              </ZoomPanViewport>
             </motion.div>
           )}
 

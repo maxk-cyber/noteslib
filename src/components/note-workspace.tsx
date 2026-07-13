@@ -174,7 +174,58 @@ export function NoteWorkspace({
         size={mode === "edit" ? "tiny" : "small"}
       />
 
-      <div className="border-b border-neutral-900/80 px-4 py-3 md:px-6">
+      <div className={`px-6 pt-8 pb-4 text-center ${fontClass ?? ""}`}>
+        <GraffitiTitle
+          text={title.toUpperCase()}
+          hovered={cursorActive}
+          variant="header"
+          theme="green"
+        />
+        <p className="mt-3 text-xs tracking-[0.3em] text-neutral-500 uppercase">
+          {author}
+        </p>
+      </div>
+
+      <div className="px-4 pb-2 md:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div
+            className="mb-3 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto"
+            onMouseEnter={() => setStripHovered(true)}
+            onMouseLeave={() => setStripHovered(false)}
+          >
+            {pagedStrip.items.map((section) => {
+              const index = sections.findIndex((item) => item.id === section.id);
+              return (
+                <SectionThumb
+                  key={section.id}
+                  index={index}
+                  title={section.title}
+                  preview={notePreview(section.body)}
+                  isActive={index === activeIndex}
+                  onSelect={() => selectSection(index)}
+                />
+              );
+            })}
+          </div>
+          {sections.length > STRIP_PAGE_SIZE && (
+            <PaginationBar
+              page={stripPage}
+              totalPages={pagedStrip.totalPages}
+              onPageChange={handleStripPageChange}
+              label="Sections"
+            />
+          )}
+        </div>
+
+        <SectionHeaderShowcase
+          defaultText={title}
+          sectionText={activeSection.title}
+          showSection={sectionEngaged || stripHovered}
+          active={stripHovered}
+        />
+      </div>
+
+      <div className="sticky top-16 z-40 border-b border-neutral-900/80 bg-[#080808]/95 px-4 py-3 backdrop-blur-sm md:px-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {(
@@ -251,57 +302,6 @@ export function NoteWorkspace({
             )}
           </div>
         </div>
-      </div>
-
-      <div className={`px-6 pt-8 pb-4 text-center ${fontClass ?? ""}`}>
-        <GraffitiTitle
-          text={title.toUpperCase()}
-          hovered={cursorActive}
-          variant="header"
-          theme="green"
-        />
-        <p className="mt-3 text-xs tracking-[0.3em] text-neutral-500 uppercase">
-          {author}
-        </p>
-      </div>
-
-      <div className="px-4 pb-2 md:px-6">
-        <div className="mx-auto max-w-6xl">
-          <div
-            className="mb-3 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto"
-            onMouseEnter={() => setStripHovered(true)}
-            onMouseLeave={() => setStripHovered(false)}
-          >
-            {pagedStrip.items.map((section) => {
-              const index = sections.findIndex((item) => item.id === section.id);
-              return (
-                <SectionThumb
-                  key={section.id}
-                  index={index}
-                  title={section.title}
-                  preview={notePreview(section.body)}
-                  isActive={index === activeIndex}
-                  onSelect={() => selectSection(index)}
-                />
-              );
-            })}
-          </div>
-          {sections.length > STRIP_PAGE_SIZE && (
-            <PaginationBar
-              page={stripPage}
-              totalPages={pagedStrip.totalPages}
-              onPageChange={handleStripPageChange}
-              label="Sections"
-            />
-          )}
-        </div>
-
-        <SectionHeaderShowcase
-          defaultText={title}
-          sectionText={activeSection.title}
-          showSection={sectionEngaged || stripHovered}
-          active={stripHovered}
-        />
       </div>
 
       <div className="mx-auto max-w-6xl px-4 pb-10 md:px-6">

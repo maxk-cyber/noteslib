@@ -52,8 +52,18 @@ function isMermaidChart(className?: string, text?: string) {
   );
 }
 
-function buildMarkdownComponents(variant: "default" | "face3d" = "default"): Components {
+function buildMarkdownComponents(
+  variant: "default" | "face3d" = "default",
+  options?: {
+    faceIndex?: number;
+    openVisual?: (id: string) => void;
+  },
+): Components {
   const isFace = variant === "face3d";
+  const faceIndex = options?.faceIndex ?? 0;
+  const openVisual = options?.openVisual;
+  const mermaidCounter = { current: 0 };
+  const imageCounter = { current: 0 };
 
   return {
     h1: ({ children }) => (
@@ -113,18 +123,46 @@ function buildMarkdownComponents(variant: "default" | "face3d" = "default"): Com
         {children}
       </a>
     ),
-    img: ({ src, alt }) => (
-      <img
-        src={src}
-        alt={alt ?? ""}
-        loading="lazy"
-        className={
-          isFace
-            ? "mx-auto my-3 max-h-56 max-w-full rounded-2xl border border-neutral-800 object-contain"
-            : "my-6 mx-auto block max-h-[min(70vh,640px)] max-w-full rounded-2xl border border-neutral-800 object-contain"
-        }
-      />
-    ),
+    img: ({ src, alt }) => {
+      if (isFace && openVisual && src) {
+        const visualId = `${faceIndex}-image-${imageCounter.current++}`;
+        return (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              openVisual(visualId);
+            }}
+            onPointerDown={(event) => event.stopPropagation()}
+            className="group relative mx-auto my-3 block max-w-full cursor-zoom-in"
+            aria-label={alt ? `Open image: ${alt}` : "Open image"}
+          >
+            <img
+              src={src}
+              alt={alt ?? ""}
+              loading="lazy"
+              className="mx-auto max-h-56 max-w-full rounded-2xl border border-neutral-800 object-contain transition-colors group-hover:border-emerald-500/40"
+            />
+            <span className="pointer-events-none absolute right-3 bottom-3 rounded-full border border-neutral-700 bg-black/70 px-2.5 py-1 text-[10px] tracking-[0.2em] text-neutral-300 uppercase opacity-90">
+              Open
+            </span>
+          </button>
+        );
+      }
+
+      return (
+        <img
+          src={src}
+          alt={alt ?? ""}
+          loading="lazy"
+          className={
+            isFace
+              ? "mx-auto my-3 max-h-56 max-w-full rounded-2xl border border-neutral-800 object-contain"
+              : "my-6 mx-auto block max-h-[min(70vh,640px)] max-w-full rounded-2xl border border-neutral-800 object-contain"
+          }
+        />
+      );
+    },
     ul: ({ children }) => (
       <ul
         className={
@@ -157,6 +195,17 @@ function buildMarkdownComponents(variant: "default" | "face3d" = "default"): Com
       const text = getCodeText(children);
 
       if (isMermaidChart(className, text)) {
+        if (isFace && openVisual) {
+          const visualId = `${faceIndex}-mermaid-${mermaidCounter.current++}`;
+          return (
+            <MermaidDiagram
+              chart={text}
+              compact
+              onExpand={() => openVisual(visualId)}
+            />
+          );
+        }
+
         return <MermaidDiagram chart={text} compact={isFace} />;
       }
 
@@ -240,14 +289,25 @@ type MarkdownPreviewProps = {
   content: string;
   className?: string;
   variant?: "default" | "face3d";
+  faceIndex?: number;
+  onOpenVisual?: (id: string) => void;
 };
 
 export function MarkdownPreview({
   content,
   className,
   variant = "default",
+  faceIndex = 0,
+  onOpenVisual,
 }: MarkdownPreviewProps) {
-  const components = useMemo(() => buildMarkdownComponents(variant), [variant]);
+  const components = useMemo(
+    () =>
+      buildMarkdownComponents(variant, {
+        faceIndex,
+        openVisual: onOpenVisual,
+      }),
+    [faceIndex, onOpenVisual, variant],
+  );
 
   return (
     <div className={className}>

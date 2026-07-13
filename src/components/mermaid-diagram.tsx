@@ -6,13 +6,18 @@ import { useEffect, useId, useState } from "react";
 type MermaidDiagramProps = {
   chart: string;
   compact?: boolean;
+  onExpand?: () => void;
 };
 
 let mermaidInitialized = false;
 
 let mermaidId = 0;
 
-export function MermaidDiagram({ chart, compact = false }: MermaidDiagramProps) {
+export function MermaidDiagram({
+  chart,
+  compact = false,
+  onExpand,
+}: MermaidDiagramProps) {
   const [svg, setSvg] = useState<string | null>(null);
   const renderId = useId().replace(/:/g, "");
 
@@ -54,6 +59,10 @@ export function MermaidDiagram({ chart, compact = false }: MermaidDiagramProps) 
     };
   }, [chart, renderId]);
 
+  const shellClass = compact
+    ? "my-2 max-h-56 overflow-auto rounded-lg border border-neutral-800 bg-neutral-950 p-3 [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-h-48 [&_svg]:max-w-full"
+    : "my-8 overflow-x-auto rounded-lg border border-neutral-800 bg-neutral-950 p-6";
+
   if (!svg) {
     return (
       <div
@@ -68,13 +77,29 @@ export function MermaidDiagram({ chart, compact = false }: MermaidDiagramProps) 
     );
   }
 
+  if (compact && onExpand) {
+    return (
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onExpand();
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+        className={`${shellClass} group relative w-full cursor-zoom-in text-left transition-colors hover:border-emerald-500/40`}
+        aria-label="Open diagram"
+      >
+        <div dangerouslySetInnerHTML={{ __html: svg }} />
+        <span className="pointer-events-none absolute right-3 bottom-3 rounded-full border border-neutral-700 bg-black/70 px-2.5 py-1 text-[10px] tracking-[0.2em] text-neutral-300 uppercase opacity-90 transition-opacity group-hover:text-emerald-300">
+          Open
+        </span>
+      </button>
+    );
+  }
+
   return (
     <div
-      className={
-        compact
-          ? "my-2 max-h-52 overflow-auto rounded-lg border border-neutral-800 bg-neutral-950 p-3 [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-h-44 [&_svg]:max-w-full"
-          : "my-8 overflow-x-auto rounded-lg border border-neutral-800 bg-neutral-950 p-6"
-      }
+      className={shellClass}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );

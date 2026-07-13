@@ -4,6 +4,10 @@ import { motion } from "framer-motion";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MarkdownPreview } from "@/components/markdown-preview";
+import {
+  ScrollVisualViewerProvider,
+  useScrollVisualViewer,
+} from "@/components/scroll-visual-viewer";
 
 type RollingSectionScrollProps = {
   sectionTitle: string;
@@ -43,6 +47,26 @@ function snapProgress(value: number, count: number) {
 function panelRotationDeg(progress: number, count: number, step: number) {
   if (count <= 1) return 0;
   return progress * (count - 1) * step;
+}
+
+function RollingFacePreview({
+  face,
+  faceIndex,
+}: {
+  face: string;
+  faceIndex: number;
+}) {
+  const { openVisual } = useScrollVisualViewer();
+
+  return (
+    <MarkdownPreview
+      variant="face3d"
+      content={face}
+      faceIndex={faceIndex}
+      onOpenVisual={openVisual}
+      className="w-full text-center"
+    />
+  );
 }
 
 export function RollingSectionScroll({
@@ -261,10 +285,11 @@ export function RollingSectionScroll({
     count > 1 ? Math.round(progress * (count - 1)) + 1 : 1;
 
   return (
-    <div
-      ref={rootRef}
-      className="fixed inset-0 z-[80] flex touch-none flex-col bg-[#080808]"
-    >
+    <ScrollVisualViewerProvider faces={faces}>
+      <div
+        ref={rootRef}
+        className="fixed inset-0 z-[80] flex touch-none flex-col bg-[#080808]"
+      >
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-900/80 px-6 py-4">
         <div>
           <p className="text-[10px] tracking-[0.3em] text-emerald-400/80 uppercase">
@@ -317,7 +342,7 @@ export function RollingSectionScroll({
           style={{ opacity: hintOpacity }}
           className="pointer-events-none absolute top-4 right-0 left-0 z-10 text-center text-[10px] tracking-[0.3em] text-neutral-600 uppercase transition-opacity duration-200"
         >
-          Drag twist · Shift+drag move · Scroll roll · End jumps to last panel
+          Drag twist · Shift+drag move · Scroll roll · Click diagrams to open
         </p>
 
         <div
@@ -386,11 +411,7 @@ export function RollingSectionScroll({
                   >
                     <div className="flex w-full max-w-4xl max-h-[min(50vh,500px)] flex-col overflow-hidden rounded-[2rem] bg-neutral-950/85 shadow-[0_0_0_1px_rgba(38,38,38,0.9)]">
                       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-8 md:py-8">
-                        <MarkdownPreview
-                          variant="face3d"
-                          content={face}
-                          className="w-full text-center"
-                        />
+                        <RollingFacePreview face={face} faceIndex={index} />
                       </div>
                     </div>
                   </div>
@@ -415,6 +436,7 @@ export function RollingSectionScroll({
           {Math.round(orbit.y)}° · 0 resets
         </p>
       </div>
-    </div>
+      </div>
+    </ScrollVisualViewerProvider>
   );
 }

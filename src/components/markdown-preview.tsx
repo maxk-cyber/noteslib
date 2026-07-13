@@ -10,6 +10,7 @@ import { MermaidDiagram } from "@/components/mermaid-diagram";
 
 const sanitizeSchema = {
   ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "mark"],
   attributes: {
     ...defaultSchema.attributes,
     span: [

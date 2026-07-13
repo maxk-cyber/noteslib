@@ -36,6 +36,16 @@ const STRIP_PAGE_SIZE = 8;
 const MIN_ZOOM = 0.75;
 const MAX_ZOOM = 2.25;
 
+/** Digit from physical key (Shift+4 → "4", not "$"). */
+function digitFromKeyEvent(event: KeyboardEvent): string | null {
+  const digitKey = event.code.match(/^Digit([0-9])$/);
+  if (digitKey) return digitKey[1];
+  const numpadKey = event.code.match(/^Numpad([0-9])$/);
+  if (numpadKey) return numpadKey[1];
+  if (!event.shiftKey && /^[0-9]$/.test(event.key)) return event.key;
+  return null;
+}
+
 type WorkspaceMode = "overview" | "focus" | "edit";
 type FocusSubView = "document" | "scroll3d";
 
@@ -187,17 +197,19 @@ export function NoteWorkspace({
 
       if (event.ctrlKey || event.metaKey || event.altKey) return;
 
-      if (event.shiftKey && /^[0-9]$/.test(event.key)) {
+      const digit = digitFromKeyEvent(event);
+
+      if (event.shiftKey && digit) {
         event.preventDefault();
-        shiftDigitBuffer += event.key;
+        shiftDigitBuffer += digit;
         clearTimeout(shiftBufferTimer);
         shiftBufferTimer = setTimeout(resolveShiftDigits, 450);
         return;
       }
 
-      if (/^[0-9]$/.test(event.key)) {
+      if (digit) {
         event.preventDefault();
-        digitBuffer += event.key;
+        digitBuffer += digit;
         clearTimeout(bufferTimer);
         bufferTimer = setTimeout(resolveDigits, 450);
         return;

@@ -16,14 +16,18 @@ type PageProps = { params: Promise<{ id: string }> };
 
 export async function generateStaticParams() {
   const notes = await listNotes();
-  return notes.map((note) => ({ id: note.id }));
+  const params = notes
+    .filter((note) => note.title !== "Welcome")
+    .map((note) => ({ id: note.id }));
+  return params.length > 0 ? params : [{ id: "_empty" }];
 }
 
 export default async function NotePage({ params }: PageProps) {
   const { id } = await params;
+  if (id === "_empty") notFound();
   const note = await getNote(id);
 
-  if (!note) notFound();
+  if (!note || note.title === "Welcome") notFound();
 
   return (
     <div className="min-h-screen bg-[#080808] text-white">
@@ -44,6 +48,7 @@ export default async function NotePage({ params }: PageProps) {
         title={note.title}
         author={note.author}
         content={note.content}
+        titleColor={note.titleColor}
         fontClass={bebas.className}
         pagesMode={process.env.NEXT_PUBLIC_GITHUB_PAGES === "true"}
       />

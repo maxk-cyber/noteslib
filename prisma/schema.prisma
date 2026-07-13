@@ -8,10 +8,11 @@ datasource db {
 }
 
 model Note {
-  id        String   @id @default(cuid())
-  title     String
-  author    String
-  content   String
-  icon      String   @default("file-text")
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  title      String
+  author     String
+  content    String
+  icon       String   @default("file-text")
+  titleColor String   @default("#34d399")
+  createdAt  DateTime @default(now())
 }

@@ -520,6 +520,7 @@ export const NoteScalarFieldEnum = {
   author: 'author',
   content: 'content',
   icon: 'icon',
+  titleColor: 'titleColor',
   createdAt: 'createdAt'
 } as const
 

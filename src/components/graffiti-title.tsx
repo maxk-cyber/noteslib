@@ -9,6 +9,7 @@ type GraffitiTitleProps = {
   className?: string;
   variant?: "hero" | "header" | "panel";
   theme?: "red" | "purple" | "yellow" | "green";
+  accentColor?: string;
 };
 
 const titleThemes = {
@@ -34,6 +35,7 @@ export function GraffitiTitle({
   className,
   variant = "hero",
   theme = "red",
+  accentColor,
 }: GraffitiTitleProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -93,8 +95,9 @@ export function GraffitiTitle({
         <h1
           ref={titleRef}
           className={`select-none whitespace-nowrap uppercase leading-none ${sizeClass} ${className ?? ""} ${
-            hovered ? colors.active : "text-white"
+            accentColor ? "" : hovered ? colors.active : "text-white"
           }`}
+          style={accentColor ? { color: accentColor } : undefined}
         >
           {text.split("").map((char, index) => (
             <motion.span
@@ -110,7 +113,8 @@ export function GraffitiTitle({
             >
               {hovered && glitched.has(index) && (
                 <span
-                  className={`absolute top-[28%] right-0 left-0 h-[38%] ${colors.glitch}`}
+                  className={accentColor ? "absolute top-[28%] right-0 left-0 h-[38%]" : `absolute top-[28%] right-0 left-0 h-[38%] ${colors.glitch}`}
+                  style={accentColor ? { backgroundColor: accentColor } : undefined}
                   aria-hidden
                 />
               )}

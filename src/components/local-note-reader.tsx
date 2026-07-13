@@ -83,6 +83,7 @@ export function LocalNoteReader() {
         title={note.title}
         author={note.author}
         content={note.content}
+        titleColor={note.titleColor}
         fontClass={bebas.className}
         pagesMode
       />

@@ -30,6 +30,7 @@ export type NoteMinAggregateOutputType = {
   author: string | null
   content: string | null
   icon: string | null
+  titleColor: string | null
   createdAt: Date | null
 }
 
@@ -39,6 +40,7 @@ export type NoteMaxAggregateOutputType = {
   author: string | null
   content: string | null
   icon: string | null
+  titleColor: string | null
   createdAt: Date | null
 }
 
@@ -48,6 +50,7 @@ export type NoteCountAggregateOutputType = {
   author: number
   content: number
   icon: number
+  titleColor: number
   createdAt: number
   _all: number
 }
@@ -59,6 +62,7 @@ export type NoteMinAggregateInputType = {
   author?: true
   content?: true
   icon?: true
+  titleColor?: true
   createdAt?: true
 }
 
@@ -68,6 +72,7 @@ export type NoteMaxAggregateInputType = {
   author?: true
   content?: true
   icon?: true
+  titleColor?: true
   createdAt?: true
 }
 
@@ -77,6 +82,7 @@ export type NoteCountAggregateInputType = {
   author?: true
   content?: true
   icon?: true
+  titleColor?: true
   createdAt?: true
   _all?: true
 }
@@ -159,6 +165,7 @@ export type NoteGroupByOutputType = {
   author: string
   content: string
   icon: string
+  titleColor: string
   createdAt: Date
   _count: NoteCountAggregateOutputType | null
   _min: NoteMinAggregateOutputType | null
@@ -189,6 +196,7 @@ export type NoteWhereInput = {
   author?: Prisma.StringFilter<"Note"> | string
   content?: Prisma.StringFilter<"Note"> | string
   icon?: Prisma.StringFilter<"Note"> | string
+  titleColor?: Prisma.StringFilter<"Note"> | string
   createdAt?: Prisma.DateTimeFilter<"Note"> | Date | string
 }
 
@@ -198,6 +206,7 @@ export type NoteOrderByWithRelationInput = {
   author?: Prisma.SortOrder
   content?: Prisma.SortOrder
   icon?: Prisma.SortOrder
+  titleColor?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -210,6 +219,7 @@ export type NoteWhereUniqueInput = Prisma.AtLeast<{
   author?: Prisma.StringFilter<"Note"> | string
   content?: Prisma.StringFilter<"Note"> | string
   icon?: Prisma.StringFilter<"Note"> | string
+  titleColor?: Prisma.StringFilter<"Note"> | string
   createdAt?: Prisma.DateTimeFilter<"Note"> | Date | string
 }, "id">
 
@@ -219,6 +229,7 @@ export type NoteOrderByWithAggregationInput = {
   author?: Prisma.SortOrder
   content?: Prisma.SortOrder
   icon?: Prisma.SortOrder
+  titleColor?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   _count?: Prisma.NoteCountOrderByAggregateInput
   _max?: Prisma.NoteMaxOrderByAggregateInput
@@ -234,6 +245,7 @@ export type NoteScalarWhereWithAggregatesInput = {
   author?: Prisma.StringWithAggregatesFilter<"Note"> | string
   content?: Prisma.StringWithAggregatesFilter<"Note"> | string
   icon?: Prisma.StringWithAggregatesFilter<"Note"> | string
+  titleColor?: Prisma.StringWithAggregatesFilter<"Note"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Note"> | Date | string
 }
 
@@ -243,6 +255,7 @@ export type NoteCreateInput = {
   author: string
   content: string
   icon?: string
+  titleColor?: string
   createdAt?: Date | string
 }
 
@@ -252,6 +265,7 @@ export type NoteUncheckedCreateInput = {
   author: string
   content: string
   icon?: string
+  titleColor?: string
   createdAt?: Date | string
 }
 
@@ -261,6 +275,7 @@ export type NoteUpdateInput = {
   author?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   icon?: Prisma.StringFieldUpdateOperationsInput | string
+  titleColor?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -270,6 +285,7 @@ export type NoteUncheckedUpdateInput = {
   author?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   icon?: Prisma.StringFieldUpdateOperationsInput | string
+  titleColor?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -279,6 +295,7 @@ export type NoteCreateManyInput = {
   author: string
   content: string
   icon?: string
+  titleColor?: string
   createdAt?: Date | string
 }
 
@@ -288,6 +305,7 @@ export type NoteUpdateManyMutationInput = {
   author?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   icon?: Prisma.StringFieldUpdateOperationsInput | string
+  titleColor?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -297,6 +315,7 @@ export type NoteUncheckedUpdateManyInput = {
   author?: Prisma.StringFieldUpdateOperationsInput | string
   content?: Prisma.StringFieldUpdateOperationsInput | string
   icon?: Prisma.StringFieldUpdateOperationsInput | string
+  titleColor?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -306,6 +325,7 @@ export type NoteCountOrderByAggregateInput = {
   author?: Prisma.SortOrder
   content?: Prisma.SortOrder
   icon?: Prisma.SortOrder
+  titleColor?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -315,6 +335,7 @@ export type NoteMaxOrderByAggregateInput = {
   author?: Prisma.SortOrder
   content?: Prisma.SortOrder
   icon?: Prisma.SortOrder
+  titleColor?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -324,6 +345,7 @@ export type NoteMinOrderByAggregateInput = {
   author?: Prisma.SortOrder
   content?: Prisma.SortOrder
   icon?: Prisma.SortOrder
+  titleColor?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
 }
 
@@ -343,6 +365,7 @@ export type NoteSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   author?: boolean
   content?: boolean
   icon?: boolean
+  titleColor?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["note"]>
 
@@ -352,6 +375,7 @@ export type NoteSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   author?: boolean
   content?: boolean
   icon?: boolean
+  titleColor?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["note"]>
 
@@ -361,6 +385,7 @@ export type NoteSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   author?: boolean
   content?: boolean
   icon?: boolean
+  titleColor?: boolean
   createdAt?: boolean
 }, ExtArgs["result"]["note"]>
 
@@ -370,10 +395,11 @@ export type NoteSelectScalar = {
   author?: boolean
   content?: boolean
   icon?: boolean
+  titleColor?: boolean
   createdAt?: boolean
 }
 
-export type NoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "author" | "content" | "icon" | "createdAt", ExtArgs["result"]["note"]>
+export type NoteOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "author" | "content" | "icon" | "titleColor" | "createdAt", ExtArgs["result"]["note"]>
 
 export type $NotePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Note"
@@ -384,6 +410,7 @@ export type $NotePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     author: string
     content: string
     icon: string
+    titleColor: string
     createdAt: Date
   }, ExtArgs["result"]["note"]>
   composites: {}
@@ -813,6 +840,7 @@ export interface NoteFieldRefs {
   readonly author: Prisma.FieldRef<"Note", 'String'>
   readonly content: Prisma.FieldRef<"Note", 'String'>
   readonly icon: Prisma.FieldRef<"Note", 'String'>
+  readonly titleColor: Prisma.FieldRef<"Note", 'String'>
   readonly createdAt: Prisma.FieldRef<"Note", 'DateTime'>
 }
     

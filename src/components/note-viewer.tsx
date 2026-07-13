@@ -11,6 +11,7 @@ type NoteViewerProps = {
   title: string;
   author: string;
   content: string;
+  titleColor?: string;
   fontClass?: string;
   pagesMode?: boolean;
 };
@@ -20,6 +21,7 @@ export function NoteViewer({
   title,
   author,
   content,
+  titleColor,
   fontClass,
   pagesMode = false,
 }: NoteViewerProps) {
@@ -50,6 +52,7 @@ export function NoteViewer({
       title={title}
       author={author}
       content={content}
+      titleColor={titleColor}
       fontClass={fontClass}
       editable={editable}
       onSave={editable ? handleSave : undefined}

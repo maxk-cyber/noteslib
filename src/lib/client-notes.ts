@@ -1,4 +1,5 @@
 import type { NoteItem } from "@/components/notes-library";
+import { DEFAULT_TITLE_COLOR, resolveTitleColor } from "@/lib/note-colors";
 import { DEFAULT_NOTE_ICON, resolveNoteIconName } from "@/lib/note-icons";
 
 const STORAGE_KEY = "noteslib-client-notes";
@@ -20,6 +21,7 @@ function readAll(): NoteItem[] {
     return parsed.map((note) => ({
       ...note,
       icon: resolveNoteIconName(note.icon),
+      titleColor: resolveTitleColor(note.titleColor),
     }));
   } catch {
     return [];
@@ -46,6 +48,7 @@ export function saveClientNote(data: {
   author: string;
   content: string;
   icon?: string;
+  titleColor?: string;
 }): NoteItem {
   const note: NoteItem = {
     id: `${LOCAL_NOTE_PREFIX}${crypto.randomUUID()}`,
@@ -53,6 +56,7 @@ export function saveClientNote(data: {
     author: data.author,
     content: data.content,
     icon: resolveNoteIconName(data.icon),
+    titleColor: resolveTitleColor(data.titleColor),
     createdAt: new Date().toISOString(),
   };
 
@@ -66,7 +70,7 @@ export function deleteClientNote(id: string) {
 
 export function updateClientNote(
   id: string,
-  data: Partial<Pick<NoteItem, "title" | "author" | "content" | "icon">>,
+  data: Partial<Pick<NoteItem, "title" | "author" | "content" | "icon" | "titleColor">>,
 ) {
   const notes = readAll();
   const index = notes.findIndex((note) => note.id === id);
@@ -76,6 +80,9 @@ export function updateClientNote(
     ...notes[index],
     ...data,
     icon: data.icon ? resolveNoteIconName(data.icon) : notes[index].icon,
+    titleColor: data.titleColor
+      ? resolveTitleColor(data.titleColor)
+      : notes[index].titleColor,
   };
 
   notes[index] = updated;

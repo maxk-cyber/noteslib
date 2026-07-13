@@ -16,6 +16,10 @@ import {
 } from "@/lib/client-notes";
 import { paginate } from "@/lib/note-sections";
 import { notePreview } from "@/lib/note-preview";
+import { resolveTitleColor } from "@/lib/note-colors";
+import {
+  usePersistedCursorSize,
+} from "@/lib/use-persisted-cursor-size";
 
 export type NoteItem = {
   id: string;
@@ -23,6 +27,7 @@ export type NoteItem = {
   author: string;
   content: string;
   icon: string;
+  titleColor: string;
   createdAt: string | Date;
 };
 
@@ -32,34 +37,39 @@ type NotesLibraryProps = {
 };
 
 const NOTES_PER_PAGE = 8;
-const DEFAULT_CURSOR_SIZE = 22;
-const MIN_CURSOR_SIZE = 10;
-const MAX_CURSOR_SIZE = 72;
 
 export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
   const isPages = process.env.NEXT_PUBLIC_GITHUB_PAGES === "true";
-  const [notes, setNotes] = useState(initialNotes);
+  const [notes, setNotes] = useState(
+    () =>
+      initialNotes
+        .filter((note) => note.title !== "Welcome")
+        .map((note) => ({
+          ...note,
+          titleColor: resolveTitleColor(note.titleColor),
+        })),
+  );
   const [uploadOpen, setUploadOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const [cursorSize, setCursorSize] = useState(DEFAULT_CURSOR_SIZE);
+  const { cursorSize, setCursorSize } = usePersistedCursorSize();
   const showcaseRef = useRef<HTMLElement>(null);
 
   const handleCursorWheel = useCallback((event: React.WheelEvent) => {
     if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
-    setCursorSize((value) =>
-      Math.min(
-        MAX_CURSOR_SIZE,
-        Math.max(MIN_CURSOR_SIZE, value - event.deltaY * 0.04),
-      ),
-    );
-  }, []);
+    setCursorSize((value) => value - event.deltaY * 0.04);
+  }, [setCursorSize]);
 
   const refresh = useCallback(async () => {
     if (isPages) {
       setNotes((prev) => {
-        const builtIn = prev.filter((note) => !isLocalNoteId(note.id));
+        const builtIn = prev
+          .filter((note) => !isLocalNoteId(note.id) && note.title !== "Welcome")
+          .map((note) => ({
+            ...note,
+            titleColor: resolveTitleColor(note.titleColor),
+          }));
         return [...builtIn, ...loadClientNotes()].sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -71,7 +81,14 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
     const res = await fetch("/api/notes");
     if (!res.ok) return;
     const updated = await res.json();
-    setNotes(updated);
+    setNotes(
+      updated
+        .filter((note: NoteItem) => note.title !== "Welcome")
+        .map((note: NoteItem) => ({
+          ...note,
+          titleColor: resolveTitleColor(note.titleColor),
+        })),
+    );
   }, [isPages]);
 
   useEffect(() => {
@@ -81,6 +98,9 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
 
   const activeNote = notes.find((note) => note.id === activeId) ?? null;
   const displayTitle = activeNote?.title.toUpperCase() ?? "NOTES";
+  const displayColor = activeNote
+    ? resolveTitleColor(activeNote.titleColor)
+    : undefined;
   const isHovered = activeId !== null;
   const pagedNotes = paginate(notes, page, NOTES_PER_PAGE);
 
@@ -122,6 +142,7 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
       author: string;
       content: string;
       icon: string;
+      titleColor: string;
     }) => {
       saveClientNote(data);
       await refresh();
@@ -186,6 +207,7 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
                 key={displayTitle}
                 text={displayTitle}
                 hovered={isHovered}
+                accentColor={displayColor}
                 theme="green"
               />
               {activeNote ? (

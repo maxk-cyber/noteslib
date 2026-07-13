@@ -16,6 +16,7 @@ export async function createNote(input: CreateNoteInput) {
       author: input.author,
       content: input.content.trim(),
       icon: input.icon,
+      titleColor: input.titleColor,
     },
   });
 }
@@ -31,6 +32,7 @@ export async function updateNote(id: string, input: UpdateNoteInput) {
       ...(input.author !== undefined ? { author: input.author } : {}),
       ...(input.content !== undefined ? { content: input.content.trim() } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
+      ...(input.titleColor !== undefined ? { titleColor: input.titleColor } : {}),
     },
   });
 }

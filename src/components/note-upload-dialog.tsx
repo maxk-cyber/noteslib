@@ -2,7 +2,9 @@
 
 import { useCallback, useState, type FormEvent } from "react";
 import { IconPicker } from "@/components/icon-picker";
+import { NoteColorPicker } from "@/components/note-color-picker";
 import { DEFAULT_NOTE_ICON } from "@/lib/note-icons";
+import { DEFAULT_TITLE_COLOR } from "@/lib/note-colors";
 
 type NoteUploadDialogProps = {
   open: boolean;
@@ -14,6 +16,7 @@ type NoteUploadDialogProps = {
     author: string;
     content: string;
     icon: string;
+    titleColor: string;
   }) => Promise<void>;
 };
 
@@ -41,6 +44,7 @@ export function NoteUploadDialog({
           author: String(formData.get("author") ?? ""),
           content: String(formData.get("content") ?? ""),
           icon: String(formData.get("icon") ?? DEFAULT_NOTE_ICON),
+          titleColor: String(formData.get("titleColor") ?? DEFAULT_TITLE_COLOR),
         };
 
         if (pagesMode && onLocalSave) {
@@ -110,6 +114,8 @@ export function NoteUploadDialog({
           </label>
 
           <IconPicker />
+
+          <NoteColorPicker />
 
           <label className="flex flex-col gap-1.5">
             <span className="text-xs tracking-wider text-neutral-500 uppercase">

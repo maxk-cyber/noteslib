@@ -21,6 +21,7 @@ const sanitizeSchema = {
     ],
     p: [...(defaultSchema.attributes?.p ?? []), "class", "className"],
     div: [...(defaultSchema.attributes?.div ?? []), "class", "className"],
+    mark: [...(defaultSchema.attributes?.mark ?? []), "class", "className"],
   },
 };
 
@@ -105,6 +106,11 @@ function buildMarkdownComponents(
     ),
     em: ({ children }) => (
       <em className="text-neutral-100 italic">{children}</em>
+    ),
+    mark: ({ children }) => (
+      <mark className="rounded bg-yellow-400/35 px-0.5 text-yellow-100">
+        {children}
+      </mark>
     ),
     a: ({ href, children }) => (
       <a

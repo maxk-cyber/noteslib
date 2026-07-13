@@ -5,15 +5,14 @@ import { useCallback, useRef, useState } from "react";
 import { GraffitiCursor } from "@/components/graffiti-cursor";
 import { GraffitiTitle } from "@/components/graffiti-title";
 import { MarkdownPreview } from "@/components/markdown-preview";
-
-const DEFAULT_CURSOR_SIZE = 22;
-const MIN_CURSOR_SIZE = 10;
-const MAX_CURSOR_SIZE = 72;
+import { resolveTitleColor } from "@/lib/note-colors";
+import { usePersistedCursorSize } from "@/lib/use-persisted-cursor-size";
 
 type NoteReaderProps = {
   title: string;
   author: string;
   content: string;
+  titleColor?: string;
   fontClass?: string;
 };
 
@@ -21,24 +20,21 @@ export function NoteReader({
   title,
   author,
   content,
+  titleColor,
   fontClass,
 }: NoteReaderProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [cursorActive, setCursorActive] = useState(false);
-  const [cursorSize, setCursorSize] = useState(DEFAULT_CURSOR_SIZE);
+  const { cursorSize, setCursorSize } = usePersistedCursorSize();
   const { scrollY } = useScroll();
   const hintOpacity = useTransform(scrollY, [0, 100], [1, 0]);
+  const accentColor = resolveTitleColor(titleColor);
 
   const handleCursorWheel = useCallback((event: React.WheelEvent) => {
     if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
-    setCursorSize((value) =>
-      Math.min(
-        MAX_CURSOR_SIZE,
-        Math.max(MIN_CURSOR_SIZE, value - event.deltaY * 0.04),
-      ),
-    );
-  }, []);
+    setCursorSize((value) => value - event.deltaY * 0.04);
+  }, [setCursorSize]);
 
   return (
     <div
@@ -60,6 +56,7 @@ export function NoteReader({
           text={title.toUpperCase()}
           hovered={cursorActive}
           variant="header"
+          accentColor={accentColor}
           theme="green"
         />
         <p className="mt-4 text-xs tracking-[0.3em] text-neutral-500 uppercase">

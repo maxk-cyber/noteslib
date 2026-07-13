@@ -13,11 +13,14 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GraffitiCursor } from "@/components/graffiti-cursor";
 import { GraffitiTitle } from "@/components/graffiti-title";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { SectionHeaderShowcase } from "@/components/section-header-showcase";
 import { PaginationBar } from "@/components/pagination-bar";
 import { SectionThumb } from "@/components/section-thumb";
 import { notePreview } from "@/lib/note-preview";
+import { resolveTitleColor } from "@/lib/note-colors";
+import { usePersistedCursorSize } from "@/lib/use-persisted-cursor-size";
 import { RollingSubsectionStack } from "@/components/rolling-subsection-stack";
 import {
   assembleNoteSections,
@@ -32,9 +35,6 @@ const SECTIONS_PER_PAGE = 6;
 const STRIP_PAGE_SIZE = 8;
 const MIN_ZOOM = 0.75;
 const MAX_ZOOM = 2.25;
-const DEFAULT_CURSOR_SIZE = 22;
-const MIN_CURSOR_SIZE = 10;
-const MAX_CURSOR_SIZE = 72;
 
 type WorkspaceMode = "overview" | "focus" | "edit";
 type FocusSubView = "document" | "scroll3d";
@@ -44,6 +44,7 @@ type NoteWorkspaceProps = {
   title: string;
   author: string;
   content: string;
+  titleColor?: string;
   fontClass?: string;
   editable?: boolean;
   onSave?: (content: string) => Promise<void>;
@@ -54,6 +55,7 @@ export function NoteWorkspace({
   title,
   author,
   content,
+  titleColor,
   fontClass,
   editable = false,
   onSave,
@@ -74,7 +76,7 @@ export function NoteWorkspace({
   const [editHover, setEditHover] = useState(false);
   const [stripHovered, setStripHovered] = useState(false);
   const [sectionEngaged, setSectionEngaged] = useState(false);
-  const [cursorSize, setCursorSize] = useState(DEFAULT_CURSOR_SIZE);
+  const { cursorSize, setCursorSize } = usePersistedCursorSize();
   const [focusSubView, setFocusSubView] = useState<FocusSubView>("document");
   const [subsectionIndex, setSubsectionIndex] = useState(0);
 
@@ -219,13 +221,10 @@ export function NoteWorkspace({
   const handleCursorWheel = useCallback((event: React.WheelEvent) => {
     if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
-    setCursorSize((value) =>
-      Math.min(
-        MAX_CURSOR_SIZE,
-        Math.max(MIN_CURSOR_SIZE, value - event.deltaY * 0.04),
-      ),
-    );
-  }, []);
+    setCursorSize((value) => value - event.deltaY * 0.04);
+  }, [setCursorSize]);
+
+  const accentColor = resolveTitleColor(titleColor);
 
   const applySectionDraft = useCallback(() => {
     if (!activeSection) return;
@@ -268,6 +267,7 @@ export function NoteWorkspace({
           text={title.toUpperCase()}
           hovered={cursorActive}
           variant="header"
+          accentColor={accentColor}
           theme="green"
         />
         <p className="mt-3 text-xs tracking-[0.3em] text-neutral-500 uppercase">
@@ -555,11 +555,9 @@ export function NoteWorkspace({
                     Apply
                   </button>
                 </div>
-                <textarea
+                <MarkdownEditor
                   value={draftRaw}
-                  onChange={(event) => setDraftRaw(event.target.value)}
-                  rows={18}
-                  className="h-[60vh] w-full cursor-text resize-none rounded-xl border border-neutral-800 bg-[#060606] p-4 font-mono text-sm leading-relaxed text-neutral-100 outline-none focus:border-emerald-500/40"
+                  onChange={setDraftRaw}
                 />
               </div>
               <div className="overflow-auto rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4 cursor-auto">

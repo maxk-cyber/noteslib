@@ -25,13 +25,13 @@ export function SkiperHoverTitle({ text, active }: SkiperHoverTitleProps) {
       title.style.transform = "scale(1)";
       const parent = title.parentElement;
       if (!parent) return;
-      const available = parent.clientWidth;
+      const available = parent.clientWidth * 0.97;
       const needed = title.scrollWidth;
       if (available <= 0 || needed <= 0) {
         setFitScale(1);
         return;
       }
-      setFitScale(Math.min(1, available / needed));
+      setFitScale(available / needed);
     };
 
     fit();
@@ -42,14 +42,14 @@ export function SkiperHoverTitle({ text, active }: SkiperHoverTitleProps) {
   }, [display, active]);
 
   return (
-    <div className="relative h-[22vw] w-full overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-center px-2">
+    <div className="relative h-[30vw] min-h-[140px] w-full overflow-hidden sm:h-[32vw] md:h-[34vw] md:min-h-[180px]">
+      <div className="absolute inset-0 flex items-center justify-center">
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.h1
             key={`${active}-${display}`}
             ref={measureRef}
             style={{ transform: `scale(${fitScale})`, transformOrigin: "center center" }}
-            className={`font-thunder inline-block select-none whitespace-nowrap text-[28vw] leading-none uppercase ${
+            className={`font-thunder inline-block select-none whitespace-nowrap text-[36vw] leading-none uppercase sm:text-[38vw] md:text-[40vw] ${
               active ? "text-red-500" : "text-white"
             }`}
             aria-live="polite"

@@ -18,7 +18,7 @@ export function SectionHeaderShowcase({
   const text = stripHovered ? hoverText : defaultText;
 
   return (
-    <div className="relative mx-auto mt-4 w-full px-2">
+    <div className="relative left-1/2 mt-2 w-screen max-w-[100vw] -translate-x-1/2 overflow-x-hidden">
       <SkiperHoverTitle text={text} active={stripHovered} />
     </div>
   );

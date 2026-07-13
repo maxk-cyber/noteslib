@@ -273,13 +273,13 @@ export function NoteWorkspace({
               label="Sections"
             />
           )}
-
-          <SectionHeaderShowcase
-            defaultText={title}
-            hoverText={activeSection.title}
-            stripHovered={stripHovered}
-          />
         </div>
+
+        <SectionHeaderShowcase
+          defaultText={title}
+          hoverText={activeSection.title}
+          stripHovered={stripHovered}
+        />
       </div>
 
       <div className="mx-auto max-w-6xl px-4 pb-10 md:px-6">

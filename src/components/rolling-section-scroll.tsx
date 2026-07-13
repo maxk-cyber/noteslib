@@ -248,10 +248,12 @@ function RollingSectionScrollBody({
         return;
       }
       if (event.key === "+" || event.key === "=") {
+        if (isVisualOpen) return;
         event.preventDefault();
         nudgeZoom(0.12);
       }
       if (event.key === "-" || event.key === "_") {
+        if (isVisualOpen) return;
         event.preventDefault();
         nudgeZoom(-0.12);
       }

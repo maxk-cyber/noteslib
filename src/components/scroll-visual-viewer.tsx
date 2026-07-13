@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, X } from "lucide-react";
 import {
   createContext,
   useCallback,
@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { motion } from "framer-motion";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 import {
   extractScrollVisuals,
@@ -41,6 +42,9 @@ type ScrollVisualViewerProviderProps = {
   faces: string[];
   children: ReactNode;
 };
+
+const MIN_VISUAL_ZOOM = 0.55;
+const MAX_VISUAL_ZOOM = 3.5;
 
 export function ScrollVisualViewerProvider({
   faces,
@@ -138,6 +142,40 @@ function ScrollVisualLightbox({
   onPrev,
   onNext,
 }: ScrollVisualLightboxProps) {
+  const [zoom, setZoom] = useState(1);
+
+  useEffect(() => {
+    setZoom(1);
+  }, [visual.id]);
+
+  const nudgeZoom = useCallback((delta: number) => {
+    setZoom((value) =>
+      Math.min(MAX_VISUAL_ZOOM, Math.max(MIN_VISUAL_ZOOM, value + delta)),
+    );
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.shiftKey) return;
+
+      if (event.key === "+" || event.key === "=") {
+        event.preventDefault();
+        event.stopPropagation();
+        nudgeZoom(0.18);
+        return;
+      }
+
+      if (event.key === "-" || event.key === "_") {
+        event.preventDefault();
+        event.stopPropagation();
+        nudgeZoom(-0.18);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [nudgeZoom]);
+
   return (
     <div
       data-3d-overlay
@@ -158,29 +196,64 @@ function ScrollVisualLightbox({
               · {index + 1} / {total}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
-            aria-label="Close diagram viewer"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => nudgeZoom(-0.18)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
+              aria-label="Zoom out diagram"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <span className="min-w-12 text-center text-[10px] tracking-widest text-neutral-500">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => nudgeZoom(0.18)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
+              aria-label="Zoom in diagram"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom(1)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
+              aria-label="Reset diagram zoom"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
+              aria-label="Close diagram viewer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div
           data-scroll-surface
           className="min-h-0 flex-1 overflow-auto px-5 py-5 md:px-8 md:py-8"
         >
-          {visual.type === "mermaid" ? (
-            <MermaidDiagram chart={visual.chart} />
-          ) : (
-            <img
-              src={visual.src}
-              alt={visual.alt}
-              className="mx-auto block max-h-[min(78vh,820px)] w-full max-w-full object-contain"
-            />
-          )}
+          <motion.div
+            animate={{ scale: zoom }}
+            transition={{ type: "spring", stiffness: 260, damping: 28 }}
+            className="origin-center"
+          >
+            {visual.type === "mermaid" ? (
+              <MermaidDiagram chart={visual.chart} />
+            ) : (
+              <img
+                src={visual.src}
+                alt={visual.alt}
+                className="mx-auto block max-h-[min(78vh,820px)] w-full max-w-full object-contain"
+              />
+            )}
+          </motion.div>
         </div>
 
         {total > 1 ? (
@@ -194,7 +267,7 @@ function ScrollVisualLightbox({
               Previous
             </button>
             <p className="text-[10px] tracking-[0.25em] text-neutral-600 uppercase">
-              Arrow keys · Esc closes
+              Shift +/- zoom · Arrows navigate · Esc closes
             </p>
             <button
               type="button"
@@ -207,7 +280,7 @@ function ScrollVisualLightbox({
           </div>
         ) : (
           <div className="border-t border-neutral-900 px-5 py-3 text-center text-[10px] tracking-[0.25em] text-neutral-600 uppercase">
-            Esc closes
+            Shift +/- zoom · Esc closes
           </div>
         )}
       </div>

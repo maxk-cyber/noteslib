@@ -1,7 +1,13 @@
 "use client";
 
 import { Highlighter } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
+import { HighlightColorWheel } from "@/components/highlight-color-wheel";
+import {
+  DEFAULT_HIGHLIGHT_COLOR,
+  buildHighlightMarkClose,
+  buildHighlightMarkOpen,
+} from "@/lib/highlight-colors";
 
 type MarkdownEditorProps = {
   value: string;
@@ -31,6 +37,9 @@ export function MarkdownEditor({
   className,
 }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [highlightColor, setHighlightColor] = useState<string>(
+    DEFAULT_HIGHLIGHT_COLOR,
+  );
 
   const applyWrap = useCallback(
     (before: string, after: string, placeholder: string) => {
@@ -53,19 +62,34 @@ export function MarkdownEditor({
 
   const highlight = useCallback(() => {
     applyWrap(
-      '<mark class="bg-yellow-400/35 text-yellow-100 px-0.5 rounded">',
-      "</mark>",
+      buildHighlightMarkOpen(highlightColor),
+      buildHighlightMarkClose(),
       "highlighted text",
     );
-  }, [applyWrap]);
+  }, [applyWrap, highlightColor]);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
+      <div className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-4">
+        <p className="mb-3 text-[10px] tracking-[0.2em] text-neutral-500 uppercase">
+          Highlight colour
+        </p>
+        <HighlightColorWheel
+          value={highlightColor}
+          onChange={setHighlightColor}
+        />
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={highlight}
-          className="flex items-center gap-1.5 rounded-full border border-yellow-500/30 bg-yellow-950/30 px-3 py-1.5 text-[10px] tracking-[0.2em] text-yellow-200 uppercase transition-colors hover:border-yellow-400/50"
+          className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] tracking-[0.2em] uppercase transition-colors"
+          style={{
+            borderColor: `${highlightColor}66`,
+            backgroundColor: `${highlightColor}22`,
+            color: highlightColor,
+          }}
           title="Wrap selection in a persistent highlight"
         >
           <Highlighter className="h-3.5 w-3.5" />
@@ -75,6 +99,7 @@ export function MarkdownEditor({
           Saved in markdown when you Apply / Save
         </span>
       </div>
+
       <textarea
         ref={textareaRef}
         value={value}

@@ -21,7 +21,7 @@ const sanitizeSchema = {
     ],
     p: [...(defaultSchema.attributes?.p ?? []), "class", "className"],
     div: [...(defaultSchema.attributes?.div ?? []), "class", "className"],
-    mark: [...(defaultSchema.attributes?.mark ?? []), "class", "className"],
+    mark: [...(defaultSchema.attributes?.mark ?? []), "class", "className", "style"],
   },
 };
 
@@ -67,8 +67,11 @@ function buildMarkdownComponents(): Components {
     em: ({ children }) => (
       <em className="text-neutral-100 italic">{children}</em>
     ),
-    mark: ({ children }) => (
-      <mark className="rounded bg-yellow-400/35 px-0.5 text-yellow-100">
+    mark: ({ children, className, style }) => (
+      <mark
+        className={className ?? "rounded bg-yellow-400/35 px-0.5 text-yellow-100"}
+        style={style}
+      >
         {children}
       </mark>
     ),

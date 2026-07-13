@@ -28,6 +28,13 @@ const sanitizeSchema = {
     p: [...(defaultSchema.attributes?.p ?? []), "class", "className"],
     div: [...(defaultSchema.attributes?.div ?? []), "class", "className"],
     mark: [...(defaultSchema.attributes?.mark ?? []), "class", "className", "style"],
+    img: [
+      ...(defaultSchema.attributes?.img ?? []),
+      "alt",
+      "class",
+      "className",
+      "style",
+    ],
   },
 };
 
@@ -110,10 +117,11 @@ function buildMarkdownComponents(variant: "default" | "face3d" = "default"): Com
       <img
         src={src}
         alt={alt ?? ""}
+        loading="lazy"
         className={
           isFace
-            ? "mx-auto my-3 max-h-48 max-w-full rounded-lg border border-neutral-800 object-contain"
-            : "my-6 max-w-full rounded-xl border border-neutral-800 object-contain"
+            ? "mx-auto my-3 max-h-56 max-w-full rounded-2xl border border-neutral-800 object-contain"
+            : "my-6 mx-auto block max-h-[min(70vh,640px)] max-w-full rounded-2xl border border-neutral-800 object-contain"
         }
       />
     ),

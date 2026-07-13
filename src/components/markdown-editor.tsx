@@ -1,7 +1,7 @@
 "use client";
 
 import { Highlighter, Paperclip } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { HighlightColorWheel } from "@/components/highlight-color-wheel";
 import {
   DEFAULT_HIGHLIGHT_COLOR,
@@ -9,6 +9,7 @@ import {
   buildHighlightMarkOpen,
 } from "@/lib/highlight-colors";
 import {
+  extractEmbeddedImages,
   fileToAttachmentMarkdown,
   filesFromClipboard,
   filesFromInput,
@@ -49,6 +50,7 @@ export function MarkdownEditor({
   );
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [attaching, setAttaching] = useState(false);
+  const embeddedImages = useMemo(() => extractEmbeddedImages(value), [value]);
 
   const applyWrap = useCallback(
     (before: string, after: string, placeholder: string) => {
@@ -174,15 +176,41 @@ export function MarkdownEditor({
         <input
           ref={fileInputRef}
           type="file"
+          accept="image/*,*/*"
           multiple
           className="hidden"
           onChange={onFileInputChange}
         />
 
         <span className="text-[10px] tracking-wider text-neutral-600">
-          Paste or attach · Apply / Save to keep
+          Paste or attach images · preview below & in live panel
         </span>
       </div>
+
+      {embeddedImages.length > 0 && (
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-4">
+          <p className="mb-3 text-[10px] tracking-[0.2em] text-neutral-500 uppercase">
+            Embedded images
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {embeddedImages.map((image, index) => (
+              <figure
+                key={`${image.src.slice(0, 48)}-${index}`}
+                className="overflow-hidden rounded-xl border border-neutral-800 bg-black/40"
+              >
+                <img
+                  src={image.src}
+                  alt={image.alt}
+                  className="max-h-48 max-w-full object-contain"
+                />
+                <figcaption className="px-2 py-1 text-[10px] text-neutral-500">
+                  {image.alt}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      )}
 
       {attachmentError && (
         <p className="text-xs text-red-400">{attachmentError}</p>

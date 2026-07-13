@@ -10,7 +10,16 @@ type RollingSectionScrollProps = {
   onClose: () => void;
 };
 
-const RADIUS = 420;
+const RADIUS = 480;
+
+function cylinderStep(count: number) {
+  return 360 / Math.max(count, 1);
+}
+
+function cylinderRadius(count: number) {
+  const stepRad = (Math.PI * 2) / Math.max(count, 1);
+  return Math.max(380, 220 / Math.tan(stepRad / 2));
+}
 
 export function RollingSectionScroll({
   sectionTitle,
@@ -19,7 +28,8 @@ export function RollingSectionScroll({
 }: RollingSectionScrollProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const count = Math.max(faces.length, 1);
-  const step = 180 / count;
+  const step = cylinderStep(count);
+  const radius = cylinderRadius(count);
   const totalRotation = (count - 1) * step;
   const [progress, setProgress] = useState(0);
 
@@ -132,16 +142,18 @@ export function RollingSectionScroll({
                   key={`face-${index}`}
                   className="absolute inset-0 flex items-center justify-center px-4 md:px-8"
                   style={{
-                    transform: `rotateX(${-index * step}deg) translateZ(${RADIUS}px)`,
+                    transform: `rotateX(${-index * step}deg) translateZ(${radius}px)`,
                     backfaceVisibility: "hidden",
                     WebkitBackfaceVisibility: "hidden",
                   }}
                 >
-                  <MarkdownPreview
-                    variant="face3d"
-                    content={face}
-                    className="max-h-full w-full max-w-4xl text-center [transform-style:preserve-3d]"
-                  />
+                  <div className="w-full max-w-4xl rounded-[2rem] bg-neutral-950/80 px-6 py-8 md:px-10 md:py-10">
+                    <MarkdownPreview
+                      variant="face3d"
+                      content={face}
+                      className="max-h-full w-full text-center"
+                    />
+                  </div>
                 </div>
               ))}
             </motion.div>

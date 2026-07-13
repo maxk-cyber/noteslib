@@ -20,13 +20,13 @@ type DragMode = "orbit" | "pan";
 
 function cylinderStep(count: number) {
   if (count <= 1) return 0;
-  return 180 / count;
+  return 360 / count;
 }
 
 function cylinderRadius(count: number) {
   if (count <= 1) return 420;
-  const stepRad = Math.PI / count;
-  return Math.max(360, 240 / Math.tan(stepRad / 2));
+  const stepRad = (Math.PI * 2) / count;
+  return Math.max(380, 220 / Math.tan(stepRad / 2));
 }
 
 function snapProgress(value: number, count: number) {

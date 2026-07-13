@@ -225,8 +225,33 @@ function tableToScrollFaces(tableBlock: string): string[] {
   return rows.map((row) => [header, separator, row].join("\n"));
 }
 
+function isHeadingBlock(block: string) {
+  const trimmed = block.trim();
+  return /^#{1,6}\s+/.test(trimmed) && !trimmed.includes("\n");
+}
+
+function mergeHeadingBlocks(blocks: string[]): string[] {
+  const merged: string[] = [];
+
+  for (let index = 0; index < blocks.length; index++) {
+    const block = blocks[index];
+    const next = blocks[index + 1];
+
+    if (isHeadingBlock(block) && next && !isHeadingBlock(next)) {
+      merged.push(`${block}\n\n${next}`);
+      index++;
+      continue;
+    }
+
+    merged.push(block);
+  }
+
+  return merged;
+}
+
 function facesFromBlocks(blocks: string[]): string[] {
-  if (blocks.length === 0) return [];
+  const mergedBlocks = mergeHeadingBlocks(blocks);
+  if (mergedBlocks.length === 0) return [];
 
   const faces: string[] = [];
   let buffer = "";
@@ -237,7 +262,7 @@ function facesFromBlocks(blocks: string[]): string[] {
     buffer = "";
   };
 
-  for (const block of blocks) {
+  for (const block of mergedBlocks) {
     const isTable = block.includes("|") && isTableLine(block.split("\n")[0] ?? "");
     const isDiagram =
       isMermaidBlock(block) ||
@@ -269,34 +294,63 @@ function facesFromBlocks(blocks: string[]): string[] {
   return faces;
 }
 
+type SectionScrollFacesOptions = {
+  sectionTitle?: string;
+};
+
+function prependSectionTitle(faces: string[], sectionTitle?: string) {
+  const title = sectionTitle?.trim();
+  if (!title || faces.length === 0) return faces;
+
+  const first = faces[0].trim();
+  if (new RegExp(`^#{1,2}\\s+${escapeRegExp(title)}\\b`, "m").test(first)) {
+    return faces;
+  }
+
+  return [`## ${title}\n\n${faces[0]}`.trim(), ...faces.slice(1)];
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /** Markdown chunks for 3D scroll — each face is a rendered preview panel. */
-export function sectionScrollFaces(body: string): string[] {
+export function sectionScrollFaces(
+  body: string,
+  options: SectionScrollFacesOptions = {},
+): string[] {
   const trimmed = body.trim();
   if (!trimmed) return ["*Empty section*"];
 
   const subsections = parseNoteSubsections(trimmed);
   if (subsections.length > 1) {
-    return subsections.flatMap((subsection) => {
+    const faces = subsections.flatMap((subsection) => {
       const faces = facesFromBlocks(splitMarkdownBlocks(subsection.body));
       if (faces.length === 0) {
-        return [subsection.body.trim() || "*Empty subsection*"];
+        const fallback = subsection.body.trim() || "*Empty subsection*";
+        return subsection.title === "Overview"
+          ? [fallback]
+          : [`### ${subsection.title}\n\n${fallback}`.trim()];
       }
 
-      if (subsection.title === "Overview" || subsection.raw.startsWith("###")) {
+      if (subsection.title === "Overview") {
         return faces;
       }
 
-      return faces.map((face, index) =>
-        index === 0 ? `### ${subsection.title}\n\n${face}`.trim() : face,
-      );
+      return faces.map((face) => `### ${subsection.title}\n\n${face}`.trim());
     });
+
+    return prependSectionTitle(faces, options.sectionTitle);
   }
 
   const blocks = splitMarkdownBlocks(trimmed);
-  if (blocks.length <= 1) return [trimmed];
+  if (blocks.length <= 1) {
+    return prependSectionTitle([trimmed], options.sectionTitle);
+  }
 
   const faces = facesFromBlocks(blocks);
-  return faces.length > 0 ? faces : [trimmed];
+  const result = faces.length > 0 ? faces : [trimmed];
+  return prependSectionTitle(result, options.sectionTitle);
 }
 
 export function assembleNoteSections(sections: NoteSection[]) {

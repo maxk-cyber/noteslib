@@ -103,8 +103,11 @@ export function NoteWorkspace({
 
   const activeSection = sections[activeIndex] ?? sections[0];
   const scroll3dFaces = useMemo(
-    () => sectionScrollFaces(activeSection?.body ?? ""),
-    [activeSection?.body],
+    () =>
+      sectionScrollFaces(activeSection?.body ?? "", {
+        sectionTitle: activeSection?.title,
+      }),
+    [activeSection?.body, activeSection?.title],
   );
   const pagedSections = useMemo(
     () => paginate(sections, page, SECTIONS_PER_PAGE),

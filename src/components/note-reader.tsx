@@ -1,12 +1,12 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { GraffitiCursor } from "@/components/graffiti-cursor";
 import { GraffitiTitle } from "@/components/graffiti-title";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { resolveTitleColor } from "@/lib/note-colors";
-import { usePersistedCursorSize } from "@/lib/use-persisted-cursor-size";
+import { usePersistedCursorSize, useCtrlWheelCursorResize } from "@/lib/use-persisted-cursor-size";
 
 type NoteReaderProps = {
   title: string;
@@ -26,22 +26,16 @@ export function NoteReader({
   const viewportRef = useRef<HTMLDivElement>(null);
   const [cursorActive, setCursorActive] = useState(false);
   const { cursorSize, setCursorSize } = usePersistedCursorSize();
+  useCtrlWheelCursorResize(setCursorSize);
   const { scrollY } = useScroll();
   const hintOpacity = useTransform(scrollY, [0, 100], [1, 0]);
   const accentColor = resolveTitleColor(titleColor);
-
-  const handleCursorWheel = useCallback((event: React.WheelEvent) => {
-    if (!event.ctrlKey && !event.metaKey) return;
-    event.preventDefault();
-    setCursorSize((value) => value - event.deltaY * 0.04);
-  }, [setCursorSize]);
 
   return (
     <div
       ref={viewportRef}
       onMouseEnter={() => setCursorActive(true)}
       onMouseLeave={() => setCursorActive(false)}
-      onWheel={handleCursorWheel}
       className="min-h-screen cursor-none bg-[#080808] pt-16"
     >
       <GraffitiCursor

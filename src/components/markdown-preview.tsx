@@ -7,7 +7,6 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
-import type { NoteSubsection } from "@/lib/note-sections";
 
 const sanitizeSchema = {
   ...defaultSchema,
@@ -31,15 +30,6 @@ function getCodeText(children: ReactNode): string {
   return String(children);
 }
 
-function getTextContent(children: ReactNode): string {
-  if (typeof children === "string") return children.trim();
-  if (Array.isArray(children)) return children.map(getTextContent).join("").trim();
-  if (isValidElement<{ children?: ReactNode }>(children)) {
-    return getTextContent(children.props.children);
-  }
-  return String(children ?? "").trim();
-}
-
 function isMermaidChart(className?: string, text?: string) {
   if (className?.includes("language-mermaid")) return true;
   const chart = text?.trim() ?? "";
@@ -48,14 +38,7 @@ function isMermaidChart(className?: string, text?: string) {
   );
 }
 
-function buildMarkdownComponents(
-  subsections: NoteSubsection[],
-  onSubsectionClick?: (index: number) => void,
-): Components {
-  const titleToIndex = new Map(
-    subsections.map((subsection, index) => [subsection.title, index]),
-  );
-
+function buildMarkdownComponents(): Components {
   return {
     h1: ({ children }) => (
       <h1 className="mt-12 mb-8 text-4xl font-semibold tracking-tight text-white first:mt-0 md:text-5xl">
@@ -67,35 +50,11 @@ function buildMarkdownComponents(
         {children}
       </h2>
     ),
-    h3: ({ children }) => {
-      const title = getTextContent(children);
-      const index = titleToIndex.get(title);
-      const clickable =
-        index !== undefined && onSubsectionClick && subsections.length > 1;
-
-      if (clickable) {
-        return (
-          <button
-            type="button"
-            onClick={() => onSubsectionClick(index)}
-            className="group mt-10 mb-5 flex w-full items-center justify-between gap-4 rounded-2xl border border-neutral-800 bg-neutral-950/60 px-5 py-4 text-left transition-colors hover:border-emerald-500/40 hover:bg-emerald-950/20"
-          >
-            <span className="text-2xl font-medium text-white md:text-3xl">
-              {children}
-            </span>
-            <span className="shrink-0 text-[10px] tracking-[0.25em] text-emerald-400/80 uppercase opacity-0 transition-opacity group-hover:opacity-100">
-              3D scroll →
-            </span>
-          </button>
-        );
-      }
-
-      return (
-        <h3 className="mt-8 mb-4 text-2xl font-medium text-white md:text-3xl">
-          {children}
-        </h3>
-      );
-    },
+    h3: ({ children }) => (
+      <h3 className="mt-8 mb-4 text-2xl font-medium text-white md:text-3xl">
+        {children}
+      </h3>
+    ),
     p: ({ children }) => (
       <p className="mb-6 text-lg leading-[1.85] text-neutral-200 md:text-xl">
         {children}
@@ -201,20 +160,10 @@ function buildMarkdownComponents(
 type MarkdownPreviewProps = {
   content: string;
   className?: string;
-  subsections?: NoteSubsection[];
-  onSubsectionClick?: (index: number) => void;
 };
 
-export function MarkdownPreview({
-  content,
-  className,
-  subsections = [],
-  onSubsectionClick,
-}: MarkdownPreviewProps) {
-  const components = useMemo(
-    () => buildMarkdownComponents(subsections, onSubsectionClick),
-    [subsections, onSubsectionClick],
-  );
+export function MarkdownPreview({ content, className }: MarkdownPreviewProps) {
+  const components = useMemo(() => buildMarkdownComponents(), []);
 
   return (
     <div className={className}>

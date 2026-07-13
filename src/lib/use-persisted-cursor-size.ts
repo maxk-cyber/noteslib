@@ -46,3 +46,19 @@ export function usePersistedCursorSize() {
 
   return { cursorSize, setCursorSize };
 }
+
+/** Ctrl/Cmd+wheel resizes cursor only — blocks page scroll. */
+export function useCtrlWheelCursorResize(
+  setCursorSize: (value: number | ((current: number) => number)) => void,
+) {
+  useEffect(() => {
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      setCursorSize((value) => value - event.deltaY * 0.04);
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [setCursorSize]);
+}

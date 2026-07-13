@@ -20,13 +20,13 @@ import { PaginationBar } from "@/components/pagination-bar";
 import { SectionThumb } from "@/components/section-thumb";
 import { notePreview } from "@/lib/note-preview";
 import { resolveTitleColor } from "@/lib/note-colors";
-import { usePersistedCursorSize } from "@/lib/use-persisted-cursor-size";
-import { RollingSubsectionStack } from "@/components/rolling-subsection-stack";
+import { usePersistedCursorSize, useCtrlWheelCursorResize } from "@/lib/use-persisted-cursor-size";
+import { RollingSectionScroll } from "@/components/rolling-section-scroll";
 import {
   assembleNoteSections,
   paginate,
   parseNoteSections,
-  parseNoteSubsections,
+  sectionScrollLines,
   updateSectionRaw,
   type NoteSection,
 } from "@/lib/note-sections";
@@ -77,8 +77,8 @@ export function NoteWorkspace({
   const [stripHovered, setStripHovered] = useState(false);
   const [sectionEngaged, setSectionEngaged] = useState(false);
   const { cursorSize, setCursorSize } = usePersistedCursorSize();
+  useCtrlWheelCursorResize(setCursorSize);
   const [focusSubView, setFocusSubView] = useState<FocusSubView>("document");
-  const [subsectionIndex, setSubsectionIndex] = useState(0);
 
   useEffect(() => {
     setSections(parseNoteSections(content));
@@ -87,16 +87,14 @@ export function NoteWorkspace({
     setStripPage(1);
     setSectionEngaged(false);
     setFocusSubView("document");
-    setSubsectionIndex(0);
     setDirty(false);
   }, [content, noteId]);
 
   const activeSection = sections[activeIndex] ?? sections[0];
-  const activeSubsections = useMemo(
-    () => parseNoteSubsections(activeSection?.body ?? ""),
+  const scroll3dLines = useMemo(
+    () => sectionScrollLines(activeSection?.body ?? ""),
     [activeSection?.body],
   );
-  const canScrollSubsections = activeSubsections.length > 1;
   const pagedSections = useMemo(
     () => paginate(sections, page, SECTIONS_PER_PAGE),
     [sections, page],
@@ -124,26 +122,50 @@ export function NoteWorkspace({
     setActiveIndex(index);
     setSectionEngaged(true);
     setFocusSubView("document");
-    setSubsectionIndex(0);
     setMode((current) => (current === "overview" ? "focus" : current));
     setZoom(1);
   }, []);
 
-  const openSubsectionScroll = useCallback((index: number) => {
-    setSubsectionIndex(index);
-    setFocusSubView("scroll3d");
+  const openSectionScroll3D = useCallback((index: number) => {
+    setActiveIndex(index);
     setSectionEngaged(true);
+    setFocusSubView("scroll3d");
+    setMode("focus");
+    setZoom(1);
+  }, []);
+
+  const closeSectionScroll3D = useCallback(() => {
+    setFocusSubView("document");
   }, []);
 
   useEffect(() => {
+    if (focusSubView !== "scroll3d") return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [focusSubView]);
+
+  useEffect(() => {
     let digitBuffer = "";
+    let shiftDigitBuffer = "";
     let bufferTimer: ReturnType<typeof setTimeout>;
+    let shiftBufferTimer: ReturnType<typeof setTimeout>;
 
     const resolveDigits = () => {
       const sectionNum = parseInt(digitBuffer, 10);
       digitBuffer = "";
       if (sectionNum >= 1 && sectionNum <= sections.length) {
         selectSection(sectionNum - 1);
+      }
+    };
+
+    const resolveShiftDigits = () => {
+      const sectionNum = parseInt(shiftDigitBuffer, 10);
+      shiftDigitBuffer = "";
+      if (sectionNum >= 1 && sectionNum <= sections.length) {
+        openSectionScroll3D(sectionNum - 1);
       }
     };
 
@@ -156,7 +178,22 @@ export function NoteWorkspace({
       ) {
         return;
       }
+
+      if (event.key === "Escape" && focusSubView === "scroll3d") {
+        event.preventDefault();
+        closeSectionScroll3D();
+        return;
+      }
+
       if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+      if (event.shiftKey && /^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+        shiftDigitBuffer += event.key;
+        clearTimeout(shiftBufferTimer);
+        shiftBufferTimer = setTimeout(resolveShiftDigits, 450);
+        return;
+      }
 
       if (/^[0-9]$/.test(event.key)) {
         event.preventDefault();
@@ -184,8 +221,16 @@ export function NoteWorkspace({
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       clearTimeout(bufferTimer);
+      clearTimeout(shiftBufferTimer);
     };
-  }, [activeIndex, sections.length, selectSection]);
+  }, [
+    activeIndex,
+    closeSectionScroll3D,
+    focusSubView,
+    openSectionScroll3D,
+    sections.length,
+    selectSection,
+  ]);
 
   const handleStripPageChange = useCallback(
     (nextPage: number) => {
@@ -207,22 +252,16 @@ export function NoteWorkspace({
 
   const handleWheel = useCallback(
     (event: React.WheelEvent) => {
-      if (mode !== "focus") return;
-      if (!event.ctrlKey && !event.metaKey) return;
+      if (mode !== "focus" || focusSubView === "scroll3d") return;
+      if (!event.altKey) return;
       event.preventDefault();
       event.stopPropagation();
       setZoom((value) =>
         Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value - event.deltaY * 0.002)),
       );
     },
-    [mode],
+    [focusSubView, mode],
   );
-
-  const handleCursorWheel = useCallback((event: React.WheelEvent) => {
-    if (!event.ctrlKey && !event.metaKey) return;
-    event.preventDefault();
-    setCursorSize((value) => value - event.deltaY * 0.04);
-  }, [setCursorSize]);
 
   const accentColor = resolveTitleColor(titleColor);
 
@@ -252,7 +291,6 @@ export function NoteWorkspace({
       ref={viewportRef}
       onMouseEnter={() => setCursorActive(true)}
       onMouseLeave={() => setCursorActive(false)}
-      onWheel={handleCursorWheel}
       className="min-h-screen cursor-none bg-[#080808] pt-16 text-white"
     >
       <GraffitiCursor
@@ -446,7 +484,7 @@ export function NoteWorkspace({
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              onWheel={focusSubView === "document" ? handleWheel : undefined}
+              onWheel={handleWheel}
               className="overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950/50 p-5 md:p-10"
             >
               <div className="mb-6 flex items-center justify-between gap-3">
@@ -482,53 +520,16 @@ export function NoteWorkspace({
                 </div>
               </div>
 
-              {focusSubView === "scroll3d" && canScrollSubsections ? (
-                <RollingSubsectionStack
-                  subsections={activeSubsections}
-                  sectionTitle={activeSection.title}
-                  initialIndex={subsectionIndex}
-                  onIndexChange={setSubsectionIndex}
-                  onClose={() => setFocusSubView("document")}
+              <motion.div
+                animate={{ scale: zoom }}
+                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                className="origin-top"
+              >
+                <MarkdownPreview
+                  content={activeSection.raw}
+                  className="max-w-none"
                 />
-              ) : (
-                <>
-                  {canScrollSubsections && (
-                    <div className="mb-10 grid gap-4 sm:grid-cols-2">
-                      {activeSubsections.map((subsection, index) => (
-                        <button
-                          key={subsection.id}
-                          type="button"
-                          onClick={() => openSubsectionScroll(index)}
-                          className="rounded-2xl border border-neutral-800 bg-neutral-950/70 p-5 text-left transition-colors hover:border-emerald-500/40 hover:bg-emerald-950/20"
-                        >
-                          <p className="text-[10px] tracking-[0.3em] text-emerald-400/80 uppercase">
-                            Part {String(index + 1).padStart(2, "0")}
-                          </p>
-                          <h3 className="mt-2 text-lg font-medium text-white">
-                            {subsection.title}
-                          </h3>
-                          <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-neutral-400">
-                            {notePreview(subsection.body) || "Open in 3D scroll"}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <motion.div
-                    animate={{ scale: zoom }}
-                    transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                    className="origin-top"
-                  >
-                    <MarkdownPreview
-                      content={activeSection.raw}
-                      subsections={activeSubsections}
-                      onSubsectionClick={openSubsectionScroll}
-                      className="max-w-none"
-                    />
-                  </motion.div>
-                </>
-              )}
+              </motion.div>
             </motion.div>
           )}
 
@@ -570,6 +571,14 @@ export function NoteWorkspace({
           )}
         </AnimatePresence>
       </div>
+
+      {focusSubView === "scroll3d" && (
+        <RollingSectionScroll
+          sectionTitle={activeSection.title}
+          lines={scroll3dLines}
+          onClose={closeSectionScroll3D}
+        />
+      )}
     </div>
   );
 }

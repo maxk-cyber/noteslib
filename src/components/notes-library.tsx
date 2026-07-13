@@ -19,6 +19,7 @@ import { notePreview } from "@/lib/note-preview";
 import { resolveTitleColor } from "@/lib/note-colors";
 import {
   usePersistedCursorSize,
+  useCtrlWheelCursorResize,
 } from "@/lib/use-persisted-cursor-size";
 
 export type NoteItem = {
@@ -53,13 +54,8 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const { cursorSize, setCursorSize } = usePersistedCursorSize();
+  useCtrlWheelCursorResize(setCursorSize);
   const showcaseRef = useRef<HTMLElement>(null);
-
-  const handleCursorWheel = useCallback((event: React.WheelEvent) => {
-    if (!event.ctrlKey && !event.metaKey) return;
-    event.preventDefault();
-    setCursorSize((value) => value - event.deltaY * 0.04);
-  }, [setCursorSize]);
 
   const refresh = useCallback(async () => {
     if (isPages) {
@@ -167,7 +163,6 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
 
       <main
         ref={showcaseRef}
-        onWheel={handleCursorWheel}
         className="relative flex flex-1 cursor-none flex-col items-center justify-center overflow-hidden"
       >
         <CrowdBackdrop />

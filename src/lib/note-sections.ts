@@ -128,6 +128,15 @@ export function parseNoteSubsections(sectionBody: string): NoteSubsection[] {
   return subsections;
 }
 
+/** Non-empty lines from section body for poem-style 3D scroll. */
+export function sectionScrollLines(body: string): string[] {
+  const lines = body
+    .split("\n")
+    .map((line) => line.replace(/^#+\s*/, "").replace(/[*_`]/g, "").trim())
+    .filter(Boolean);
+  return lines.length > 0 ? lines : ["Empty section"];
+}
+
 export function assembleNoteSections(sections: NoteSection[]) {
   return sections
     .map((section) => section.raw.trim())

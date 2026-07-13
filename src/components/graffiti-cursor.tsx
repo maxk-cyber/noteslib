@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useSpring } from "framer-motion";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type GraffitiCursorProps = {
   active: boolean;
@@ -17,11 +17,8 @@ const cursorColors = {
   green: "bg-emerald-400",
 };
 
-function iconClassForSize(px: number) {
-  if (px >= 28) return "h-2.5 w-2.5";
-  if (px >= 18) return "h-2 w-2";
-  return "h-1.5 w-1.5";
-}
+/** Arrow scales with circle — matches Skiper6 ~40% of cursor diameter. */
+const ICON_RATIO = 0.4;
 
 export function GraffitiCursor({
   active,
@@ -31,7 +28,7 @@ export function GraffitiCursor({
 }: GraffitiCursorProps) {
   const box = Math.max(8, Math.min(96, sizePx));
   const offset = box / 2;
-  const iconClass = useMemo(() => iconClassForSize(box), [box]);
+  const iconSize = box * ICON_RATIO;
 
   const [visible, setVisible] = useState(false);
   const cursorX = useSpring(0, { stiffness: 500, damping: 40, mass: 0.6 });
@@ -84,11 +81,10 @@ export function GraffitiCursor({
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="16"
-        height="16"
         viewBox="0 0 16 16"
         fill="none"
-        className={iconClass}
+        width={iconSize}
+        height={iconSize}
         aria-hidden
       >
         <path

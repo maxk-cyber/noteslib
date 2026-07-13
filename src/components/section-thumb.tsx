@@ -48,7 +48,7 @@ export function SectionThumb({
               {title}
             </p>
             {preview && (
-              <p className="mt-1 line-clamp-2 text-[8px] leading-snug text-white/70">
+              <p className="mt-1 line-clamp-2 whitespace-pre-line text-[8px] leading-snug text-white/70">
                 {preview}
               </p>
             )}

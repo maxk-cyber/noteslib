@@ -339,7 +339,7 @@ export function NoteWorkspace({
                   key={section.id}
                   index={index}
                   title={section.title}
-                  preview={notePreview(section.body)}
+                  preview={notePreview(section.body, { maxLines: 2, maxChars: 100 })}
                   isActive={index === activeIndex}
                   onSelect={() => selectSection(index)}
                 />
@@ -474,8 +474,9 @@ export function NoteWorkspace({
                       <h3 className="mt-2 text-lg font-medium text-white">
                         {section.title}
                       </h3>
-                      <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-neutral-400">
-                        {notePreview(section.body) || "Empty section"}
+                      <p className="mt-3 line-clamp-4 whitespace-pre-line text-sm leading-relaxed text-neutral-400">
+                        {notePreview(section.body, { maxLines: 4, maxChars: 320 }) ||
+                          "Empty section"}
                       </p>
                     </motion.button>
                   );

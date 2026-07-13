@@ -188,7 +188,7 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
                   href={noteHref(note.id)}
                   icon={note.icon}
                   title={note.title}
-                  preview={notePreview(note.content)}
+                  preview={notePreview(note.content, { maxLines: 2, maxChars: 100 })}
                   isActive={activeId === note.id}
                   onHover={() => setActiveId(note.id)}
                 />

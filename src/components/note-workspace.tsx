@@ -247,7 +247,7 @@ export function NoteWorkspace({
         <div className="mx-auto max-w-6xl">
           <NoteHeaderVideo
             sectionTitle={activeSection.title}
-            sectionPreview={notePreview(activeSection.body)}
+            hovered={cursorActive}
           />
 
           <div className="mb-3 mt-4 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto">

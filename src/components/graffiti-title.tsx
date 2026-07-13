@@ -7,7 +7,7 @@ type GraffitiTitleProps = {
   text: string;
   hovered: boolean;
   className?: string;
-  variant?: "hero" | "header";
+  variant?: "hero" | "header" | "panel";
   theme?: "red" | "purple" | "yellow" | "green";
 };
 
@@ -44,7 +44,9 @@ export function GraffitiTitle({
   const sizeClass =
     variant === "header"
       ? "text-[10vw] md:text-[14vw]"
-      : "text-[22vw] md:text-[28vw]";
+      : variant === "panel"
+        ? "text-2xl sm:text-3xl md:text-5xl"
+        : "text-[22vw] md:text-[28vw]";
 
   useLayoutEffect(() => {
     const container = containerRef.current;

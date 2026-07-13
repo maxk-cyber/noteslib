@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { CreateNoteInput } from "@/lib/validation/note.schema";
+import type { CreateNoteInput, UpdateNoteInput } from "@/lib/validation/note.schema";
 
 export async function listNotes() {
   return db.note.findMany({ orderBy: { createdAt: "desc" } });
@@ -16,6 +16,21 @@ export async function createNote(input: CreateNoteInput) {
       author: input.author,
       content: input.content.trim(),
       icon: input.icon,
+    },
+  });
+}
+
+export async function updateNote(id: string, input: UpdateNoteInput) {
+  const existing = await db.note.findUnique({ where: { id } });
+  if (!existing) return null;
+
+  return db.note.update({
+    where: { id },
+    data: {
+      ...(input.title !== undefined ? { title: input.title } : {}),
+      ...(input.author !== undefined ? { author: input.author } : {}),
+      ...(input.content !== undefined ? { content: input.content.trim() } : {}),
+      ...(input.icon !== undefined ? { icon: input.icon } : {}),
     },
   });
 }

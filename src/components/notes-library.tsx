@@ -7,12 +7,14 @@ import { GraffitiCursor } from "@/components/graffiti-cursor";
 import { GraffitiTitle } from "@/components/graffiti-title";
 import { NoteHoverThumb } from "@/components/note-hover-thumb";
 import { NoteUploadDialog } from "@/components/note-upload-dialog";
+import { PaginationBar } from "@/components/pagination-bar";
 import {
   deleteClientNote,
   isLocalNoteId,
   loadClientNotes,
   saveClientNote,
 } from "@/lib/client-notes";
+import { paginate } from "@/lib/note-sections";
 import { notePreview } from "@/lib/note-preview";
 
 export type NoteItem = {
@@ -29,11 +31,14 @@ type NotesLibraryProps = {
   fontClass: string;
 };
 
+const NOTES_PER_PAGE = 8;
+
 export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
   const isPages = process.env.NEXT_PUBLIC_GITHUB_PAGES === "true";
   const [notes, setNotes] = useState(initialNotes);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const showcaseRef = useRef<HTMLElement>(null);
 
   const refresh = useCallback(async () => {
@@ -62,6 +67,13 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
   const activeNote = notes.find((note) => note.id === activeId) ?? null;
   const displayTitle = activeNote?.title.toUpperCase() ?? "NOTES";
   const isHovered = activeId !== null;
+  const pagedNotes = paginate(notes, page, NOTES_PER_PAGE);
+
+  useEffect(() => {
+    if (activeId && !pagedNotes.items.some((note) => note.id === activeId)) {
+      setActiveId(null);
+    }
+  }, [activeId, pagedNotes.items]);
 
   const handleDelete = useCallback(async () => {
     if (!activeNote) return;
@@ -133,7 +145,7 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
         ) : (
           <>
             <div className="absolute top-[10%] z-20 flex h-[120px] w-full max-w-[90%] flex-wrap items-center justify-center md:max-w-none">
-              {notes.map((note) => (
+              {pagedNotes.items.map((note) => (
                 <NoteHoverThumb
                   key={note.id}
                   href={noteHref(note.id)}
@@ -178,6 +190,17 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
           </>
         )}
       </main>
+
+      {notes.length > NOTES_PER_PAGE && (
+        <footer className="relative z-30 shrink-0 border-t border-neutral-900/80 px-6 py-4">
+          <PaginationBar
+            page={pagedNotes.page}
+            totalPages={pagedNotes.totalPages}
+            onPageChange={setPage}
+            label="Notes"
+          />
+        </footer>
+      )}
 
       <NoteUploadDialog
         open={uploadOpen}

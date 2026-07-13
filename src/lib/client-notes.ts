@@ -63,3 +63,22 @@ export function saveClientNote(data: {
 export function deleteClientNote(id: string) {
   writeAll(readAll().filter((note) => note.id !== id));
 }
+
+export function updateClientNote(
+  id: string,
+  data: Partial<Pick<NoteItem, "title" | "author" | "content" | "icon">>,
+) {
+  const notes = readAll();
+  const index = notes.findIndex((note) => note.id === id);
+  if (index === -1) return null;
+
+  const updated: NoteItem = {
+    ...notes[index],
+    ...data,
+    icon: data.icon ? resolveNoteIconName(data.icon) : notes[index].icon,
+  };
+
+  notes[index] = updated;
+  writeAll(notes);
+  return updated;
+}

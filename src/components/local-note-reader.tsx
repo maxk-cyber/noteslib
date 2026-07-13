@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { DeleteButton } from "@/components/delete-button";
-import { NoteReader } from "@/components/note-reader";
+import { NoteViewer } from "@/components/note-viewer";
 import {
   deleteClientNote,
   getClientNote,
@@ -78,11 +78,13 @@ export function LocalNoteReader() {
         />
       </header>
 
-      <NoteReader
+      <NoteViewer
+        noteId={note.id}
         title={note.title}
         author={note.author}
         content={note.content}
         fontClass={bebas.className}
+        pagesMode
       />
     </div>
   );

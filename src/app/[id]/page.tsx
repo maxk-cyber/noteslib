@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bebas_Neue } from "next/font/google";
 import { NotePageActions } from "@/components/note-page-actions";
-import { NoteReader } from "@/components/note-reader";
+import { NoteViewer } from "@/components/note-viewer";
 import { getNote, listNotes } from "@/lib/services/note.service";
 import { notFound } from "next/navigation";
 
@@ -39,11 +39,13 @@ export default async function NotePage({ params }: PageProps) {
         )}
       </header>
 
-      <NoteReader
+      <NoteViewer
+        noteId={note.id}
         title={note.title}
         author={note.author}
         content={note.content}
         fontClass={bebas.className}
+        pagesMode={process.env.NEXT_PUBLIC_GITHUB_PAGES === "true"}
       />
     </div>
   );

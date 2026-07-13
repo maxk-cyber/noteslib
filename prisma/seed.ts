@@ -26,11 +26,37 @@ flowchart LR
   PREVIEW --> READ[Scroll to read]
 \`\`\`
 
+## Workspace modes
+
+Use **Grid** for an overview, **Focus** to zoom a section, and **Edit** to change markdown in place.
+
+## Pagination
+
+Notes and sections paginate automatically when lists grow long.
+
 > Hover thumbnails on the home page. Click to open a note.`,
   },
 ];
 
 async function main() {
+  const welcomeContent = DEMO_NOTES[0].content;
+  const existingWelcome = await db.note.findFirst({
+    where: { title: "Welcome" },
+  });
+
+  if (existingWelcome) {
+    await db.note.update({
+      where: { id: existingWelcome.id },
+      data: {
+        author: DEMO_NOTES[0].author,
+        icon: DEMO_NOTES[0].icon,
+        content: welcomeContent,
+      },
+    });
+    console.log("Updated Welcome note.");
+    return;
+  }
+
   const existing = await db.note.count();
   if (existing > 0) {
     console.log(`Database already has ${existing} note(s). Skipping seed.`);

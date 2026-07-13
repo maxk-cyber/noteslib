@@ -12,4 +12,13 @@ export const createNoteSchema = z.object({
     .refine(isNoteIconName, "Invalid icon"),
 });
 
+export const updateNoteSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  author: z.string().min(1).max(200).optional(),
+  content: z.string().min(1).max(50000).optional(),
+  icon: z.string().optional().refine((value) => !value || isNoteIconName(value), "Invalid icon"),
+});
+
+export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
+
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;

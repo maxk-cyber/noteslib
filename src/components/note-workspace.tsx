@@ -67,12 +67,14 @@ export function NoteWorkspace({
   const [cursorActive, setCursorActive] = useState(false);
   const [editHover, setEditHover] = useState(false);
   const [stripHovered, setStripHovered] = useState(false);
+  const [sectionEngaged, setSectionEngaged] = useState(false);
 
   useEffect(() => {
     setSections(parseNoteSections(content));
     setActiveIndex(0);
     setPage(1);
     setStripPage(1);
+    setSectionEngaged(false);
     setDirty(false);
   }, [content, noteId]);
 
@@ -102,9 +104,28 @@ export function NoteWorkspace({
 
   const selectSection = useCallback((index: number) => {
     setActiveIndex(index);
+    setSectionEngaged(true);
     setMode((current) => (current === "overview" ? "focus" : current));
     setZoom(1);
   }, []);
+
+  const handleStripPageChange = useCallback(
+    (nextPage: number) => {
+      setStripPage(nextPage);
+      const index = (nextPage - 1) * STRIP_PAGE_SIZE;
+      if (sections[index]) selectSection(index);
+    },
+    [sections, selectSection],
+  );
+
+  const handleContentPageChange = useCallback(
+    (nextPage: number) => {
+      setPage(nextPage);
+      const index = (nextPage - 1) * SECTIONS_PER_PAGE;
+      if (sections[index]) selectSection(index);
+    },
+    [sections, selectSection],
+  );
 
   const handleWheel = useCallback(
     (event: React.WheelEvent) => {
@@ -269,7 +290,7 @@ export function NoteWorkspace({
             <PaginationBar
               page={stripPage}
               totalPages={pagedStrip.totalPages}
-              onPageChange={setStripPage}
+              onPageChange={handleStripPageChange}
               label="Sections"
             />
           )}
@@ -277,8 +298,9 @@ export function NoteWorkspace({
 
         <SectionHeaderShowcase
           defaultText={title}
-          hoverText={activeSection.title}
-          stripHovered={stripHovered}
+          sectionText={activeSection.title}
+          showSection={sectionEngaged || stripHovered}
+          active={stripHovered}
         />
       </div>
 
@@ -323,7 +345,7 @@ export function NoteWorkspace({
               <PaginationBar
                 page={pagedSections.page}
                 totalPages={pagedSections.totalPages}
-                onPageChange={setPage}
+                onPageChange={handleContentPageChange}
                 label="Pages"
               />
             </motion.div>

@@ -26,7 +26,7 @@ import {
   assembleNoteSections,
   paginate,
   parseNoteSections,
-  sectionScrollLines,
+  sectionScrollFaces,
   updateSectionRaw,
   type NoteSection,
 } from "@/lib/note-sections";
@@ -101,8 +101,8 @@ export function NoteWorkspace({
   }, [content, noteId]);
 
   const activeSection = sections[activeIndex] ?? sections[0];
-  const scroll3dLines = useMemo(
-    () => sectionScrollLines(activeSection?.body ?? ""),
+  const scroll3dFaces = useMemo(
+    () => sectionScrollFaces(activeSection?.body ?? ""),
     [activeSection?.body],
   );
   const pagedSections = useMemo(
@@ -587,7 +587,7 @@ export function NoteWorkspace({
       {focusSubView === "scroll3d" && (
         <RollingSectionScroll
           sectionTitle={activeSection.title}
-          lines={scroll3dLines}
+          faces={scroll3dFaces}
           onClose={closeSectionScroll3D}
         />
       )}

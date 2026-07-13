@@ -128,13 +128,84 @@ export function parseNoteSubsections(sectionBody: string): NoteSubsection[] {
   return subsections;
 }
 
-/** Non-empty lines from section body for poem-style 3D scroll. */
-export function sectionScrollLines(body: string): string[] {
-  const lines = body
-    .split("\n")
-    .map((line) => line.replace(/^#+\s*/, "").replace(/[*_`]/g, "").trim())
-    .filter(Boolean);
-  return lines.length > 0 ? lines : ["Empty section"];
+function isTableLine(line: string) {
+  const trimmed = line.trim();
+  return trimmed.includes("|") || /^\|?[\s:|-]+\|?\s*$/.test(trimmed);
+}
+
+function splitMarkdownBlocks(text: string): string[] {
+  const blocks: string[] = [];
+  const lines = text.split("\n");
+  let i = 0;
+
+  while (i < lines.length) {
+    if (!lines[i].trim()) {
+      i++;
+      continue;
+    }
+
+    if (isTableLine(lines[i])) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].trim() && isTableLine(lines[i])) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      blocks.push(tableLines.join("\n"));
+      continue;
+    }
+
+    const block: string[] = [];
+    while (i < lines.length && lines[i].trim() !== "") {
+      block.push(lines[i]);
+      i++;
+    }
+    blocks.push(block.join("\n"));
+  }
+
+  return blocks.map((block) => block.trim()).filter(Boolean);
+}
+
+/** Markdown chunks for 3D scroll — each face is a rendered preview panel. */
+export function sectionScrollFaces(body: string): string[] {
+  const trimmed = body.trim();
+  if (!trimmed) return ["*Empty section*"];
+
+  const subsections = parseNoteSubsections(trimmed);
+  if (subsections.length > 1) {
+    return subsections.map((subsection) => {
+      if (subsection.raw.startsWith("###")) return subsection.raw;
+      if (subsection.title === "Overview") return subsection.body;
+      return `### ${subsection.title}\n\n${subsection.body}`.trim();
+    });
+  }
+
+  const blocks = splitMarkdownBlocks(trimmed);
+  if (blocks.length <= 1) return [trimmed];
+
+  const faces: string[] = [];
+  let buffer = "";
+
+  for (const block of blocks) {
+    const isTable = block.includes("|");
+    if (isTable) {
+      if (buffer) {
+        faces.push(buffer.trim());
+        buffer = "";
+      }
+      faces.push(block);
+      continue;
+    }
+
+    if (buffer.length + block.length > 700 && buffer) {
+      faces.push(buffer.trim());
+      buffer = block;
+    } else {
+      buffer = buffer ? `${buffer}\n\n${block}` : block;
+    }
+  }
+
+  if (buffer) faces.push(buffer.trim());
+  return faces.length > 0 ? faces : [trimmed];
 }
 
 export function assembleNoteSections(sections: NoteSection[]) {

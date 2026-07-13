@@ -81,7 +81,9 @@ export function MermaidDiagram({
     return (
       <button
         type="button"
+        data-diagram-hit
         onClick={(event) => {
+          event.preventDefault();
           event.stopPropagation();
           onExpand();
         }}
@@ -89,7 +91,10 @@ export function MermaidDiagram({
         className={`${shellClass} group relative w-full cursor-zoom-in text-left transition-colors hover:border-emerald-500/40`}
         aria-label="Open diagram"
       >
-        <div dangerouslySetInnerHTML={{ __html: svg }} />
+        <div
+          className="pointer-events-none [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-h-48 [&_svg]:max-w-full"
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
         <span className="pointer-events-none absolute right-3 bottom-3 rounded-full border border-neutral-700 bg-black/70 px-2.5 py-1 text-[10px] tracking-[0.2em] text-neutral-300 uppercase opacity-90 transition-opacity group-hover:text-emerald-300">
           Open
         </span>

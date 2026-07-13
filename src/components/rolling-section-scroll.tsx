@@ -8,6 +8,12 @@ import {
   ScrollVisualViewerProvider,
   useScrollVisualViewer,
 } from "@/components/scroll-visual-viewer";
+import {
+  canScrollSurface,
+  getScrollSurface,
+  isContainedSurface,
+  isViewportDragTarget,
+} from "@/lib/wheel-target";
 
 type RollingSectionScrollProps = {
   sectionTitle: string;
@@ -74,6 +80,23 @@ export function RollingSectionScroll({
   faces,
   onClose,
 }: RollingSectionScrollProps) {
+  return (
+    <ScrollVisualViewerProvider faces={faces}>
+      <RollingSectionScrollBody
+        sectionTitle={sectionTitle}
+        faces={faces}
+        onClose={onClose}
+      />
+    </ScrollVisualViewerProvider>
+  );
+}
+
+function RollingSectionScrollBody({
+  sectionTitle,
+  faces,
+  onClose,
+}: RollingSectionScrollProps) {
+  const { isOpen: isVisualOpen } = useScrollVisualViewer();
   const rootRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const dragOrigin = useRef({
@@ -143,6 +166,22 @@ export function RollingSectionScroll({
     if (!root) return;
 
     const onWheel = (event: WheelEvent) => {
+      if (isVisualOpen) {
+        const surface = getScrollSurface(event.target);
+        if (surface && canScrollSurface(surface, event.deltaY, event.deltaX)) {
+          return;
+        }
+        if (isContainedSurface(event.target)) return;
+      }
+
+      const surface = getScrollSurface(event.target);
+      if (surface) {
+        if (canScrollSurface(surface, event.deltaY, event.deltaX)) {
+          return;
+        }
+        if (isContainedSurface(event.target)) return;
+      }
+
       event.preventDefault();
       event.stopPropagation();
 
@@ -160,11 +199,12 @@ export function RollingSectionScroll({
       root.removeEventListener("wheel", onWheel);
       if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
     };
-  }, [nudgeProgress, nudgeZoom, scheduleSnap]);
+  }, [isVisualOpen, nudgeProgress, nudgeZoom, scheduleSnap]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (isVisualOpen) return;
         event.preventDefault();
         onClose();
         return;
@@ -223,10 +263,12 @@ export function RollingSectionScroll({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [count, nudgeZoom, onClose, resetView, setProgressSnapped]);
+  }, [count, isVisualOpen, nudgeZoom, onClose, resetView, setProgressSnapped]);
 
   const onViewportPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (isViewportDragTarget(event.target)) return;
+
       const panDrag = event.shiftKey || event.button === 1;
       if (!panDrag && event.button !== 0) return;
       event.preventDefault();
@@ -283,9 +325,9 @@ export function RollingSectionScroll({
 
   const activeFace =
     count > 1 ? Math.round(progress * (count - 1)) + 1 : 1;
+  const activeFaceIndex = activeFace - 1;
 
   return (
-    <ScrollVisualViewerProvider faces={faces}>
       <div
         ref={rootRef}
         className="fixed inset-0 z-[80] flex touch-none flex-col bg-[#080808]"
@@ -407,10 +449,17 @@ export function RollingSectionScroll({
                       transform: `rotateX(${-index * step}deg) translateZ(${radius}px)`,
                       backfaceVisibility: "hidden",
                       WebkitBackfaceVisibility: "hidden",
+                      pointerEvents: index === activeFaceIndex ? "auto" : "none",
                     }}
                   >
-                    <div className="flex w-full max-w-4xl max-h-[min(50vh,500px)] flex-col overflow-hidden rounded-[2rem] bg-neutral-950/85 shadow-[0_0_0_1px_rgba(38,38,38,0.9)]">
-                      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-8 md:py-8">
+                    <div
+                      className="flex w-full max-w-4xl max-h-[min(50vh,500px)] flex-col overflow-hidden rounded-[2rem] bg-neutral-950/85 shadow-[0_0_0_1px_rgba(38,38,38,0.9)]"
+                      style={{ transform: "translateZ(1px)" }}
+                    >
+                      <div
+                        data-scroll-surface
+                        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-8 md:py-8"
+                      >
                         <RollingFacePreview face={face} faceIndex={index} />
                       </div>
                     </div>
@@ -437,6 +486,5 @@ export function RollingSectionScroll({
         </p>
       </div>
       </div>
-    </ScrollVisualViewerProvider>
   );
 }

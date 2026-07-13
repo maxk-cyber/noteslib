@@ -7,6 +7,12 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
+import {
+  imageVisualId,
+  isMermaidChartText,
+  mermaidVisualId,
+  type ScrollVisual,
+} from "@/lib/scroll-visuals";
 
 const sanitizeSchema = {
   ...defaultSchema,
@@ -45,18 +51,14 @@ function getCodeText(children: ReactNode): string {
 }
 
 function isMermaidChart(className?: string, text?: string) {
-  if (className?.includes("language-mermaid")) return true;
-  const chart = text?.trim() ?? "";
-  return /^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|mindmap|timeline|gitGraph|C4Context)\b/.test(
-    chart,
-  );
+  return isMermaidChartText(className, text ?? "");
 }
 
 function buildMarkdownComponents(
   variant: "default" | "face3d" = "default",
   options?: {
     faceIndex?: number;
-    openVisual?: (id: string) => void;
+    openVisual?: (visual: ScrollVisual) => void;
   },
 ): Components {
   const isFace = variant === "face3d";
@@ -125,13 +127,32 @@ function buildMarkdownComponents(
     ),
     img: ({ src, alt }) => {
       if (isFace && openVisual && src) {
-        const visualId = `${faceIndex}-image-${imageCounter.current++}`;
+        const imageSrc = typeof src === "string" ? src : "";
+        if (!imageSrc) {
+          return (
+            <img
+              src={src}
+              alt={alt ?? ""}
+              loading="lazy"
+              className="mx-auto my-3 max-h-56 max-w-full rounded-2xl border border-neutral-800 object-contain"
+            />
+          );
+        }
+
+        const visualId = imageVisualId(faceIndex, imageCounter.current++);
         return (
           <button
             type="button"
+            data-diagram-hit
             onClick={(event) => {
+              event.preventDefault();
               event.stopPropagation();
-              openVisual(visualId);
+              openVisual({
+                id: visualId,
+                type: "image",
+                src: imageSrc,
+                alt: alt ?? "",
+              });
             }}
             onPointerDown={(event) => event.stopPropagation()}
             className="group relative mx-auto my-3 block max-w-full cursor-zoom-in"
@@ -196,12 +217,18 @@ function buildMarkdownComponents(
 
       if (isMermaidChart(className, text)) {
         if (isFace && openVisual) {
-          const visualId = `${faceIndex}-mermaid-${mermaidCounter.current++}`;
+          const visualId = mermaidVisualId(faceIndex, mermaidCounter.current++);
           return (
             <MermaidDiagram
               chart={text}
               compact
-              onExpand={() => openVisual(visualId)}
+              onExpand={() =>
+                openVisual({
+                  id: visualId,
+                  type: "mermaid",
+                  chart: text,
+                })
+              }
             />
           );
         }
@@ -290,7 +317,7 @@ type MarkdownPreviewProps = {
   className?: string;
   variant?: "default" | "face3d";
   faceIndex?: number;
-  onOpenVisual?: (id: string) => void;
+  onOpenVisual?: (visual: ScrollVisual) => void;
 };
 
 export function MarkdownPreview({

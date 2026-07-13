@@ -13,11 +13,13 @@ import {
 import { MermaidDiagram } from "@/components/mermaid-diagram";
 import {
   extractScrollVisuals,
+  resolveScrollVisual,
   type ScrollVisual,
 } from "@/lib/scroll-visuals";
 
 type ScrollVisualViewerContextValue = {
-  openVisual: (id: string) => void;
+  openVisual: (visual: ScrollVisual) => void;
+  isOpen: boolean;
 };
 
 const ScrollVisualViewerContext =
@@ -45,33 +47,34 @@ export function ScrollVisualViewerProvider({
   children,
 }: ScrollVisualViewerProviderProps) {
   const visuals = useMemo(() => extractScrollVisuals(faces), [faces]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeVisual, setActiveVisual] = useState<ScrollVisual | null>(null);
 
   const activeIndex = useMemo(() => {
-    if (!activeId) return -1;
-    return visuals.findIndex((visual) => visual.id === activeId);
-  }, [activeId, visuals]);
+    if (!activeVisual) return -1;
+    return visuals.findIndex((visual) => visual.id === activeVisual.id);
+  }, [activeVisual, visuals]);
 
-  const activeVisual = activeIndex >= 0 ? visuals[activeIndex] : null;
-
-  const openVisual = useCallback((id: string) => {
-    setActiveId(id);
-  }, []);
+  const openVisual = useCallback(
+    (visual: ScrollVisual) => {
+      setActiveVisual(resolveScrollVisual(visuals, visual));
+    },
+    [visuals],
+  );
 
   const closeVisual = useCallback(() => {
-    setActiveId(null);
+    setActiveVisual(null);
   }, []);
 
   const showPrev = useCallback(() => {
     if (visuals.length <= 1 || activeIndex < 0) return;
     const nextIndex = (activeIndex - 1 + visuals.length) % visuals.length;
-    setActiveId(visuals[nextIndex]?.id ?? null);
+    setActiveVisual(visuals[nextIndex] ?? null);
   }, [activeIndex, visuals]);
 
   const showNext = useCallback(() => {
     if (visuals.length <= 1 || activeIndex < 0) return;
     const nextIndex = (activeIndex + 1) % visuals.length;
-    setActiveId(visuals[nextIndex]?.id ?? null);
+    setActiveVisual(visuals[nextIndex] ?? null);
   }, [activeIndex, visuals]);
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export function ScrollVisualViewerProvider({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
+        event.stopPropagation();
         closeVisual();
         return;
       }
@@ -94,12 +98,14 @@ export function ScrollVisualViewerProvider({
       }
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [activeVisual, closeVisual, showNext, showPrev]);
 
   return (
-    <ScrollVisualViewerContext.Provider value={{ openVisual }}>
+    <ScrollVisualViewerContext.Provider
+      value={{ openVisual, isOpen: Boolean(activeVisual) }}
+    >
       {children}
       {activeVisual ? (
         <ScrollVisualLightbox
@@ -134,9 +140,9 @@ function ScrollVisualLightbox({
 }: ScrollVisualLightboxProps) {
   return (
     <div
+      data-3d-overlay
       className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 p-4 md:p-8"
       onClick={onClose}
-      onWheel={(event) => event.stopPropagation()}
     >
       <div
         className="relative flex max-h-[min(92vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-neutral-800 bg-[#0a0a0a] shadow-2xl"
@@ -162,7 +168,10 @@ function ScrollVisualLightbox({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto px-5 py-5 md:px-8 md:py-8">
+        <div
+          data-scroll-surface
+          className="min-h-0 flex-1 overflow-auto px-5 py-5 md:px-8 md:py-8"
+        >
           {visual.type === "mermaid" ? (
             <MermaidDiagram chart={visual.chart} />
           ) : (

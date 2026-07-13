@@ -5,6 +5,13 @@ export type NoteSection = {
   raw: string;
 };
 
+export type NoteSubsection = {
+  id: string;
+  title: string;
+  body: string;
+  raw: string;
+};
+
 function titleFromContent(content: string) {
   const match = content.match(/^#\s+(.+)$/m);
   return match?.[1]?.trim() ?? null;
@@ -64,6 +71,61 @@ export function parseNoteSections(content: string): NoteSection[] {
   });
 
   return sections;
+}
+
+/** Split a section body on `###` headings into subsections. */
+export function parseNoteSubsections(sectionBody: string): NoteSubsection[] {
+  const trimmed = sectionBody.trim();
+  if (!trimmed) {
+    return [
+      {
+        id: "sub-0",
+        title: "Content",
+        body: "",
+        raw: "",
+      },
+    ];
+  }
+
+  const chunks = trimmed.split(/^### /m);
+  if (chunks.length === 1) {
+    return [
+      {
+        id: "sub-0",
+        title: "Overview",
+        body: trimmed,
+        raw: trimmed,
+      },
+    ];
+  }
+
+  const subsections: NoteSubsection[] = [];
+  const intro = chunks[0]?.trim();
+
+  if (intro) {
+    subsections.push({
+      id: "sub-intro",
+      title: "Overview",
+      body: intro,
+      raw: intro,
+    });
+  }
+
+  chunks.slice(1).forEach((chunk, index) => {
+    const lines = chunk.split("\n");
+    const title = lines[0]?.trim() || `Part ${index + 1}`;
+    const body = lines.slice(1).join("\n").trim();
+    const raw = `### ${chunk.trim()}`;
+
+    subsections.push({
+      id: `sub-${index + 1}`,
+      title,
+      body,
+      raw,
+    });
+  });
+
+  return subsections;
 }
 
 export function assembleNoteSections(sections: NoteSection[]) {

@@ -18,10 +18,12 @@ import { SectionHeaderShowcase } from "@/components/section-header-showcase";
 import { PaginationBar } from "@/components/pagination-bar";
 import { SectionThumb } from "@/components/section-thumb";
 import { notePreview } from "@/lib/note-preview";
+import { RollingSubsectionStack } from "@/components/rolling-subsection-stack";
 import {
   assembleNoteSections,
   paginate,
   parseNoteSections,
+  parseNoteSubsections,
   updateSectionRaw,
   type NoteSection,
 } from "@/lib/note-sections";
@@ -35,6 +37,7 @@ const MIN_CURSOR_SIZE = 10;
 const MAX_CURSOR_SIZE = 72;
 
 type WorkspaceMode = "overview" | "focus" | "edit";
+type FocusSubView = "document" | "scroll3d";
 
 type NoteWorkspaceProps = {
   noteId: string;
@@ -72,6 +75,8 @@ export function NoteWorkspace({
   const [stripHovered, setStripHovered] = useState(false);
   const [sectionEngaged, setSectionEngaged] = useState(false);
   const [cursorSize, setCursorSize] = useState(DEFAULT_CURSOR_SIZE);
+  const [focusSubView, setFocusSubView] = useState<FocusSubView>("document");
+  const [subsectionIndex, setSubsectionIndex] = useState(0);
 
   useEffect(() => {
     setSections(parseNoteSections(content));
@@ -79,10 +84,17 @@ export function NoteWorkspace({
     setPage(1);
     setStripPage(1);
     setSectionEngaged(false);
+    setFocusSubView("document");
+    setSubsectionIndex(0);
     setDirty(false);
   }, [content, noteId]);
 
   const activeSection = sections[activeIndex] ?? sections[0];
+  const activeSubsections = useMemo(
+    () => parseNoteSubsections(activeSection?.body ?? ""),
+    [activeSection?.body],
+  );
+  const canScrollSubsections = activeSubsections.length > 1;
   const pagedSections = useMemo(
     () => paginate(sections, page, SECTIONS_PER_PAGE),
     [sections, page],
@@ -109,8 +121,16 @@ export function NoteWorkspace({
   const selectSection = useCallback((index: number) => {
     setActiveIndex(index);
     setSectionEngaged(true);
+    setFocusSubView("document");
+    setSubsectionIndex(0);
     setMode((current) => (current === "overview" ? "focus" : current));
     setZoom(1);
+  }, []);
+
+  const openSubsectionScroll = useCallback((index: number) => {
+    setSubsectionIndex(index);
+    setFocusSubView("scroll3d");
+    setSectionEngaged(true);
   }, []);
 
   useEffect(() => {
@@ -426,15 +446,15 @@ export function NoteWorkspace({
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              onWheel={handleWheel}
-              className="overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950/50 p-4 md:p-8"
+              onWheel={focusSubView === "document" ? handleWheel : undefined}
+              className="overflow-hidden rounded-3xl border border-neutral-800 bg-neutral-950/50 p-5 md:p-10"
             >
-              <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="mb-6 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] tracking-[0.3em] text-emerald-400/80 uppercase">
                     Section {String(activeIndex + 1).padStart(2, "0")}
                   </p>
-                  <h2 className="text-2xl font-medium text-white">
+                  <h2 className="text-2xl font-medium text-white md:text-3xl">
                     {activeSection.title}
                   </h2>
                 </div>
@@ -462,13 +482,53 @@ export function NoteWorkspace({
                 </div>
               </div>
 
-              <motion.div
-                animate={{ scale: zoom }}
-                transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                className="origin-top"
-              >
-                <MarkdownPreview content={activeSection.raw} />
-              </motion.div>
+              {focusSubView === "scroll3d" && canScrollSubsections ? (
+                <RollingSubsectionStack
+                  subsections={activeSubsections}
+                  sectionTitle={activeSection.title}
+                  initialIndex={subsectionIndex}
+                  onIndexChange={setSubsectionIndex}
+                  onClose={() => setFocusSubView("document")}
+                />
+              ) : (
+                <>
+                  {canScrollSubsections && (
+                    <div className="mb-10 grid gap-4 sm:grid-cols-2">
+                      {activeSubsections.map((subsection, index) => (
+                        <button
+                          key={subsection.id}
+                          type="button"
+                          onClick={() => openSubsectionScroll(index)}
+                          className="rounded-2xl border border-neutral-800 bg-neutral-950/70 p-5 text-left transition-colors hover:border-emerald-500/40 hover:bg-emerald-950/20"
+                        >
+                          <p className="text-[10px] tracking-[0.3em] text-emerald-400/80 uppercase">
+                            Part {String(index + 1).padStart(2, "0")}
+                          </p>
+                          <h3 className="mt-2 text-lg font-medium text-white">
+                            {subsection.title}
+                          </h3>
+                          <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-neutral-400">
+                            {notePreview(subsection.body) || "Open in 3D scroll"}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <motion.div
+                    animate={{ scale: zoom }}
+                    transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                    className="origin-top"
+                  >
+                    <MarkdownPreview
+                      content={activeSection.raw}
+                      subsections={activeSubsections}
+                      onSubsectionClick={openSubsectionScroll}
+                      className="max-w-none"
+                    />
+                  </motion.div>
+                </>
+              )}
             </motion.div>
           )}
 

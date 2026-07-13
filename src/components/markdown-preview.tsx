@@ -7,16 +7,18 @@ import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
+import { NoteVideoEmbed } from "@/components/note-video-embed";
 import {
   imageVisualId,
   isMermaidChartText,
   mermaidVisualId,
+  videoVisualId,
   type ScrollVisual,
 } from "@/lib/scroll-visuals";
 
 const sanitizeSchema = {
   ...defaultSchema,
-  tagNames: [...(defaultSchema.tagNames ?? []), "mark"],
+  tagNames: [...(defaultSchema.tagNames ?? []), "mark", "video"],
   protocols: {
     ...defaultSchema.protocols,
     href: [...(defaultSchema.protocols?.href ?? []), "data"],
@@ -40,6 +42,19 @@ const sanitizeSchema = {
       "class",
       "className",
       "style",
+    ],
+    video: [
+      ...(defaultSchema.attributes?.video ?? []),
+      "src",
+      "title",
+      "class",
+      "className",
+      "data-note-video",
+      "playsinline",
+      "muted",
+      "loop",
+      "controls",
+      "preload",
     ],
   },
 };
@@ -66,6 +81,7 @@ function buildMarkdownComponents(
   const openVisual = options?.openVisual;
   const mermaidCounter = { current: 0 };
   const imageCounter = { current: 0 };
+  const videoCounter = { current: 0 };
 
   return {
     h1: ({ children }) => (
@@ -182,6 +198,35 @@ function buildMarkdownComponents(
               : "my-6 mx-auto block max-h-[min(70vh,640px)] max-w-full rounded-2xl border border-neutral-800 object-contain"
           }
         />
+      );
+    },
+    video: ({ src, title }) => {
+      const videoSrc = typeof src === "string" ? src : "";
+      if (!videoSrc) return null;
+
+      const videoTitle = typeof title === "string" ? title : "Video";
+
+      if (isFace && openVisual) {
+        const visualId = videoVisualId(faceIndex, videoCounter.current++);
+        return (
+          <NoteVideoEmbed
+            src={videoSrc}
+            title={videoTitle}
+            compact
+            onExpand={() =>
+              openVisual({
+                id: visualId,
+                type: "video",
+                src: videoSrc,
+                title: videoTitle,
+              })
+            }
+          />
+        );
+      }
+
+      return (
+        <NoteVideoEmbed src={videoSrc} title={videoTitle} compact={isFace} />
       );
     },
     ul: ({ children }) => (

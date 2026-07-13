@@ -203,6 +203,8 @@ function RollingSectionScrollBody({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (isVisualOpen) return;
+
       if (event.key === "Escape") {
         if (isVisualOpen) return;
         event.preventDefault();
@@ -332,7 +334,7 @@ function RollingSectionScrollBody({
   return (
       <div
         ref={rootRef}
-        className="fixed inset-0 z-[80] flex touch-none flex-col bg-[#080808]"
+        className="fixed inset-0 z-[80] flex cursor-none flex-col bg-[#080808] touch-none"
       >
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-900/80 px-6 py-4">
         <div>
@@ -386,7 +388,7 @@ function RollingSectionScrollBody({
           style={{ opacity: hintOpacity }}
           className="pointer-events-none absolute top-4 right-0 left-0 z-10 text-center text-[10px] tracking-[0.3em] text-neutral-600 uppercase transition-opacity duration-200"
         >
-          Drag twist · Shift+drag move · Scroll roll · Click diagrams to open
+          Drag twist · Shift+drag move · Scroll roll · Click media to open
         </p>
 
         <div

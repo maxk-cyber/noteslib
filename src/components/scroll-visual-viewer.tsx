@@ -12,8 +12,10 @@ import {
 } from "react";
 import { motion } from "framer-motion";
 import { MermaidDiagram } from "@/components/mermaid-diagram";
+import { NoteVideoPlayer } from "@/components/note-video-embed";
 import {
   extractScrollVisuals,
+  findVisualIndex,
   resolveScrollVisual,
   type ScrollVisual,
 } from "@/lib/scroll-visuals";
@@ -51,35 +53,36 @@ export function ScrollVisualViewerProvider({
   children,
 }: ScrollVisualViewerProviderProps) {
   const visuals = useMemo(() => extractScrollVisuals(faces), [faces]);
-  const [activeVisual, setActiveVisual] = useState<ScrollVisual | null>(null);
-
-  const activeIndex = useMemo(() => {
-    if (!activeVisual) return -1;
-    return visuals.findIndex((visual) => visual.id === activeVisual.id);
-  }, [activeVisual, visuals]);
+  const [activeVisualIndex, setActiveVisualIndex] = useState(-1);
+  const activeVisual =
+    activeVisualIndex >= 0 ? (visuals[activeVisualIndex] ?? null) : null;
 
   const openVisual = useCallback(
     (visual: ScrollVisual) => {
-      setActiveVisual(resolveScrollVisual(visuals, visual));
+      const resolved = resolveScrollVisual(visuals, visual);
+      const index = findVisualIndex(visuals, resolved);
+      setActiveVisualIndex(index);
     },
     [visuals],
   );
 
   const closeVisual = useCallback(() => {
-    setActiveVisual(null);
+    setActiveVisualIndex(-1);
   }, []);
 
   const showPrev = useCallback(() => {
-    if (visuals.length <= 1 || activeIndex < 0) return;
-    const nextIndex = (activeIndex - 1 + visuals.length) % visuals.length;
-    setActiveVisual(visuals[nextIndex] ?? null);
-  }, [activeIndex, visuals]);
+    if (visuals.length <= 1) return;
+    const baseIndex = activeVisualIndex < 0 ? 0 : activeVisualIndex;
+    const nextIndex = (baseIndex - 1 + visuals.length) % visuals.length;
+    setActiveVisualIndex(nextIndex);
+  }, [activeVisualIndex, visuals]);
 
   const showNext = useCallback(() => {
-    if (visuals.length <= 1 || activeIndex < 0) return;
-    const nextIndex = (activeIndex + 1) % visuals.length;
-    setActiveVisual(visuals[nextIndex] ?? null);
-  }, [activeIndex, visuals]);
+    if (visuals.length <= 1) return;
+    const baseIndex = activeVisualIndex < 0 ? 0 : activeVisualIndex;
+    const nextIndex = (baseIndex + 1) % visuals.length;
+    setActiveVisualIndex(nextIndex);
+  }, [activeVisualIndex, visuals]);
 
   useEffect(() => {
     if (!activeVisual) return;
@@ -91,13 +94,15 @@ export function ScrollVisualViewerProvider({
         closeVisual();
         return;
       }
-      if (event.key === "ArrowLeft") {
+      if (event.key === "ArrowLeft" && !event.shiftKey) {
         event.preventDefault();
+        event.stopPropagation();
         showPrev();
         return;
       }
-      if (event.key === "ArrowRight") {
+      if (event.key === "ArrowRight" && !event.shiftKey) {
         event.preventDefault();
+        event.stopPropagation();
         showNext();
       }
     };
@@ -108,13 +113,13 @@ export function ScrollVisualViewerProvider({
 
   return (
     <ScrollVisualViewerContext.Provider
-      value={{ openVisual, isOpen: Boolean(activeVisual) }}
+      value={{ openVisual, isOpen: activeVisualIndex >= 0 }}
     >
       {children}
       {activeVisual ? (
         <ScrollVisualLightbox
           visual={activeVisual}
-          index={activeIndex}
+          index={activeVisualIndex}
           total={visuals.length}
           onClose={closeVisual}
           onPrev={showPrev}
@@ -179,51 +184,63 @@ function ScrollVisualLightbox({
   return (
     <div
       data-3d-overlay
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/90 p-4 md:p-8"
-      onClick={onClose}
+      className="fixed inset-0 z-[120] flex cursor-none items-center justify-center p-4 md:p-8"
+      role="dialog"
+      aria-modal="true"
     >
-      <div
-        className="relative flex max-h-[min(92vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-neutral-800 bg-[#0a0a0a] shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
+      <button
+        type="button"
+        aria-label="Close diagram viewer"
+        className="absolute inset-0 bg-black/90"
+        onClick={onClose}
+      />
+      <div className="relative z-10 flex max-h-[min(92vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-neutral-800 bg-[#0a0a0a] shadow-2xl">
         <div className="flex items-center justify-between gap-3 border-b border-neutral-900 px-5 py-4">
           <div>
             <p className="text-[10px] tracking-[0.3em] text-emerald-400/80 uppercase">
               Diagram viewer
             </p>
             <p className="text-sm text-neutral-300">
-              {visual.type === "mermaid" ? "Mermaid diagram" : visual.alt || "Image"}{" "}
+              {visual.type === "mermaid"
+                ? "Mermaid diagram"
+                : visual.type === "video"
+                  ? visual.title || "Video"
+                  : visual.alt || "Image"}{" "}
               · {index + 1} / {total}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => nudgeZoom(-0.18)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
-              aria-label="Zoom out diagram"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <span className="min-w-12 text-center text-[10px] tracking-widest text-neutral-500">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={() => nudgeZoom(0.18)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
-              aria-label="Zoom in diagram"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setZoom(1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
-              aria-label="Reset diagram zoom"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
+            {visual.type !== "video" ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => nudgeZoom(-0.18)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
+                  aria-label="Zoom out diagram"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="min-w-12 text-center text-[10px] tracking-widest text-neutral-500">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => nudgeZoom(0.18)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
+                  aria-label="Zoom in diagram"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom(1)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 text-neutral-400 transition-colors hover:text-white"
+                  aria-label="Reset diagram zoom"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               onClick={onClose}
@@ -239,39 +256,55 @@ function ScrollVisualLightbox({
           data-scroll-surface
           className="min-h-0 flex-1 overflow-auto px-5 py-5 md:px-8 md:py-8"
         >
-          <motion.div
-            animate={{ scale: zoom }}
-            transition={{ type: "spring", stiffness: 260, damping: 28 }}
-            className="origin-center"
-          >
-            {visual.type === "mermaid" ? (
-              <MermaidDiagram chart={visual.chart} />
-            ) : (
-              <img
-                src={visual.src}
-                alt={visual.alt}
-                className="mx-auto block max-h-[min(78vh,820px)] w-full max-w-full object-contain"
-              />
-            )}
-          </motion.div>
+          {visual.type === "video" ? (
+            <NoteVideoPlayer
+              src={visual.src}
+              title={visual.title}
+              className="max-w-6xl rounded-2xl border border-neutral-800"
+            />
+          ) : (
+            <motion.div
+              animate={{ scale: zoom }}
+              transition={{ type: "spring", stiffness: 260, damping: 28 }}
+              className="origin-center"
+            >
+              {visual.type === "mermaid" ? (
+                <MermaidDiagram chart={visual.chart} />
+              ) : (
+                <img
+                  src={visual.src}
+                  alt={visual.alt}
+                  className="mx-auto block max-h-[min(78vh,820px)] w-full max-w-full object-contain"
+                />
+              )}
+            </motion.div>
+          )}
         </div>
 
         {total > 1 ? (
           <div className="flex items-center justify-between gap-3 border-t border-neutral-900 px-5 py-4">
             <button
               type="button"
-              onClick={onPrev}
+              onClick={(event) => {
+                event.stopPropagation();
+                onPrev();
+              }}
               className="inline-flex items-center gap-2 rounded-full border border-neutral-800 px-4 py-2 text-[10px] tracking-[0.25em] text-neutral-300 uppercase transition-colors hover:border-emerald-500/40 hover:text-emerald-300"
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
             </button>
             <p className="text-[10px] tracking-[0.25em] text-neutral-600 uppercase">
-              Shift +/- zoom · Arrows navigate · Esc closes
+              {visual.type === "video"
+                ? "Arrows navigate · Esc closes"
+                : "Shift +/- zoom · Arrows navigate · Esc closes"}
             </p>
             <button
               type="button"
-              onClick={onNext}
+              onClick={(event) => {
+                event.stopPropagation();
+                onNext();
+              }}
               className="inline-flex items-center gap-2 rounded-full border border-neutral-800 px-4 py-2 text-[10px] tracking-[0.25em] text-neutral-300 uppercase transition-colors hover:border-emerald-500/40 hover:text-emerald-300"
             >
               Next
@@ -280,7 +313,7 @@ function ScrollVisualLightbox({
           </div>
         ) : (
           <div className="border-t border-neutral-900 px-5 py-3 text-center text-[10px] tracking-[0.25em] text-neutral-600 uppercase">
-            Shift +/- zoom · Esc closes
+            {visual.type === "video" ? "Esc closes" : "Shift +/- zoom · Esc closes"}
           </div>
         )}
       </div>

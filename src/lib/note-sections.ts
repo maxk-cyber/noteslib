@@ -164,6 +164,10 @@ function isEmbeddedImageBlock(block: string) {
   return /<img\s[^>]*src=["'][^"']+["'][^>]*>/i.test(block);
 }
 
+function isEmbeddedVideoBlock(block: string) {
+  return /<video[^>]*\ssrc=["'][^"']+["'][^>]*>/i.test(block);
+}
+
 function splitMarkdownBlocks(text: string): string[] {
   const blocks: string[] = [];
   const lines = text.split("\n");
@@ -267,6 +271,7 @@ function facesFromBlocks(blocks: string[]): string[] {
     const isDiagram =
       isMermaidBlock(block) ||
       isEmbeddedImageBlock(block) ||
+      isEmbeddedVideoBlock(block) ||
       (isFencedBlock(block) && block.length > 120);
 
     if (isTable) {

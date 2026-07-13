@@ -36,13 +36,11 @@ export function GraffitiCursor({
   const scale = useSpring(0, { stiffness: 400, damping: 30 });
 
   const onMove = useCallback(
-    (e: MouseEvent) => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      cursorX.set(e.clientX - rect.left - offset);
-      cursorY.set(e.clientY - rect.top - offset);
+    (event: MouseEvent) => {
+      cursorX.set(event.clientX - offset);
+      cursorY.set(event.clientY - offset);
     },
-    [containerRef, cursorX, cursorY, offset],
+    [cursorX, cursorY, offset],
   );
 
   useEffect(() => {
@@ -69,7 +67,7 @@ export function GraffitiCursor({
 
   return (
     <motion.div
-      className={`pointer-events-none absolute top-0 left-0 z-50 flex items-center justify-center rounded-full ${cursorColors[theme]}`}
+      className={`pointer-events-none fixed top-0 left-0 z-[250] flex items-center justify-center rounded-full ${cursorColors[theme]}`}
       style={{
         x: cursorX,
         y: cursorY,

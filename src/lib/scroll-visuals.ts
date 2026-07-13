@@ -9,11 +9,19 @@ export type ScrollVisual =
       type: "image";
       src: string;
       alt: string;
+    }
+  | {
+      id: string;
+      type: "video";
+      src: string;
+      title: string;
     };
 
 const FENCE_RE = /```([^\n`]*)\r?\n([\s\S]*?)```/gi;
 const HTML_IMG_RE =
   /<img\s[^>]*src=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?[^>]*>/gi;
+const HTML_VIDEO_RE =
+  /<video[^>]*\ssrc=["']([^"']+)["'][^>]*(?:\stitle=["']([^"']*)["'])?[^>]*>/gi;
 const MD_IMG_RE = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
 export function isMermaidChartText(className: string | undefined, text: string) {
@@ -30,6 +38,10 @@ export function mermaidVisualId(faceIndex: number, index: number) {
 
 export function imageVisualId(faceIndex: number, index: number) {
   return `${faceIndex}-image-${index}`;
+}
+
+export function videoVisualId(faceIndex: number, index: number) {
+  return `${faceIndex}-video-${index}`;
 }
 
 export function extractScrollVisuals(faces: string[]): ScrollVisual[] {
@@ -72,6 +84,17 @@ export function extractScrollVisuals(faces: string[]): ScrollVisual[] {
       });
       imageIndex++;
     }
+
+    let videoIndex = 0;
+    for (const match of face.matchAll(HTML_VIDEO_RE)) {
+      visuals.push({
+        id: videoVisualId(faceIndex, videoIndex),
+        type: "video",
+        src: match[1],
+        title: match[2] || "Video",
+      });
+      videoIndex++;
+    }
   });
 
   return visuals;
@@ -81,24 +104,36 @@ export function resolveScrollVisual(
   visuals: ScrollVisual[],
   visual: ScrollVisual,
 ): ScrollVisual {
-  const byId = visuals.find((item) => item.id === visual.id);
-  if (byId) return byId;
+  const index = findVisualIndex(visuals, visual);
+  if (index >= 0) return visuals[index]!;
+  return visual;
+}
+
+export function findVisualIndex(
+  visuals: ScrollVisual[],
+  visual: ScrollVisual,
+): number {
+  const byId = visuals.findIndex((item) => item.id === visual.id);
+  if (byId >= 0) return byId;
 
   if (visual.type === "mermaid") {
-    return (
-      visuals.find(
-        (item): item is Extract<ScrollVisual, { type: "mermaid" }> =>
-          item.type === "mermaid" && item.chart === visual.chart,
-      ) ?? visual
+    return visuals.findIndex(
+      (item): item is Extract<ScrollVisual, { type: "mermaid" }> =>
+        item.type === "mermaid" && item.chart === visual.chart,
     );
   }
 
-  return (
-    visuals.find(
-      (item): item is Extract<ScrollVisual, { type: "image" }> =>
-        item.type === "image" &&
-        item.src === visual.src &&
-        item.alt === visual.alt,
-    ) ?? visual
+  if (visual.type === "video") {
+    return visuals.findIndex(
+      (item): item is Extract<ScrollVisual, { type: "video" }> =>
+        item.type === "video" && item.src === visual.src,
+    );
+  }
+
+  return visuals.findIndex(
+    (item): item is Extract<ScrollVisual, { type: "image" }> =>
+      item.type === "image" &&
+      item.src === visual.src &&
+      item.alt === visual.alt,
   );
 }

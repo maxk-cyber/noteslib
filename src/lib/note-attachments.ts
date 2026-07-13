@@ -1,8 +1,14 @@
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 12 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 1600;
 
 export type EmbeddedImage = {
   alt: string;
+  src: string;
+};
+
+export type EmbeddedVideo = {
+  title: string;
   src: string;
 };
 
@@ -18,6 +24,11 @@ function readFileAsDataUrl(file: File): Promise<string> {
 function isImageFile(file: File) {
   if (file.type.startsWith("image/")) return true;
   return /\.(png|jpe?g|gif|webp|svg|bmp|avif|heic|heif)$/i.test(file.name);
+}
+
+function isVideoFile(file: File) {
+  if (file.type.startsWith("video/")) return true;
+  return /\.(mp4|webm|ogg|mov|m4v)$/i.test(file.name);
 }
 
 function escapeAttr(value: string) {
@@ -75,13 +86,28 @@ function sanitizeFilename(name: string) {
   return name.replace(/[\[\]()]/g, "").trim() || "attachment";
 }
 
-/** HTML img embed — reliable with rehype-raw; renders inline in preview. */
+function videoEmbedMarkup(src: string, title: string) {
+  return `\n\n<video data-note-video src="${src}" title="${escapeAttr(title)}"></video>\n\n`;
+}
+
+/** HTML embed — reliable with rehype-raw; renders inline in preview. */
 export async function fileToAttachmentMarkdown(file: File): Promise<string> {
-  if (file.size > MAX_FILE_BYTES) {
-    throw new Error(`"${file.name}" is too large (max ${MAX_FILE_BYTES / (1024 * 1024)}MB).`);
+  const label = sanitizeFilename(file.name || "attachment");
+
+  if (isVideoFile(file)) {
+    if (file.size > MAX_VIDEO_BYTES) {
+      throw new Error(
+        `"${file.name}" is too large (max ${MAX_VIDEO_BYTES / (1024 * 1024)}MB for video).`,
+      );
+    }
+    const dataUrl = await readFileAsDataUrl(file);
+    const title = label.replace(/\.[^.]+$/, "") || "video";
+    return videoEmbedMarkup(dataUrl, title);
   }
 
-  const label = sanitizeFilename(file.name || "attachment");
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error(`"${file.name}" is too large (max ${MAX_IMAGE_BYTES / (1024 * 1024)}MB).`);
+  }
 
   if (isImageFile(file)) {
     const dataUrl = await compressImageFile(file);
@@ -92,6 +118,9 @@ export async function fileToAttachmentMarkdown(file: File): Promise<string> {
   const dataUrl = await readFileAsDataUrl(file);
   return `\n\n[📎 ${label}](${dataUrl})\n\n`;
 }
+
+const HTML_VIDEO_RE =
+  /<video[^>]*\ssrc=["']([^"']+)["'][^>]*(?:\stitle=["']([^"']*)["'])?[^>]*>/gi;
 
 export function extractEmbeddedImages(content: string): EmbeddedImage[] {
   const images: EmbeddedImage[] = [];
@@ -116,6 +145,20 @@ export function extractEmbeddedImages(content: string): EmbeddedImage[] {
   }
 
   return images;
+}
+
+export function extractEmbeddedVideos(content: string): EmbeddedVideo[] {
+  const videos: EmbeddedVideo[] = [];
+  const seen = new Set<string>();
+
+  for (const match of content.matchAll(HTML_VIDEO_RE)) {
+    const src = match[1];
+    if (seen.has(src)) continue;
+    seen.add(src);
+    videos.push({ title: match[2] || "Video", src });
+  }
+
+  return videos;
 }
 
 export function insertTextAtCursor(

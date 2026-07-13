@@ -10,6 +10,7 @@ import {
 } from "@/lib/highlight-colors";
 import {
   extractEmbeddedImages,
+  extractEmbeddedVideos,
   fileToAttachmentMarkdown,
   filesFromClipboard,
   filesFromInput,
@@ -51,6 +52,7 @@ export function MarkdownEditor({
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [attaching, setAttaching] = useState(false);
   const embeddedImages = useMemo(() => extractEmbeddedImages(value), [value]);
+  const embeddedVideos = useMemo(() => extractEmbeddedVideos(value), [value]);
 
   const applyWrap = useCallback(
     (before: string, after: string, placeholder: string) => {
@@ -168,7 +170,7 @@ export function MarkdownEditor({
           onClick={() => fileInputRef.current?.click()}
           disabled={attaching}
           className="flex items-center gap-1.5 rounded-full border border-neutral-700 bg-neutral-900/60 px-3 py-1.5 text-[10px] tracking-[0.2em] text-neutral-300 uppercase transition-colors hover:border-emerald-500/40 hover:text-emerald-300 disabled:opacity-40"
-          title="Attach image or file"
+          title="Attach image, video, or file"
         >
           <Paperclip className="h-3.5 w-3.5" />
           {attaching ? "Attaching…" : "Attach"}
@@ -176,16 +178,44 @@ export function MarkdownEditor({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,*/*"
+          accept="image/*,video/*,*/*"
           multiple
           className="hidden"
           onChange={onFileInputChange}
         />
 
         <span className="text-[10px] tracking-wider text-neutral-600">
-          Paste or attach images · preview below & in live panel
+          Paste or attach images & video · preview below & in live panel
         </span>
       </div>
+
+      {embeddedVideos.length > 0 && (
+        <div className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-4">
+          <p className="mb-3 text-[10px] tracking-[0.2em] text-neutral-500 uppercase">
+            Embedded videos
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {embeddedVideos.map((video, index) => (
+              <figure
+                key={`${video.src.slice(0, 48)}-${index}`}
+                className="overflow-hidden rounded-xl border border-neutral-800 bg-black/40"
+              >
+                <video
+                  src={video.src}
+                  muted
+                  playsInline
+                  loop
+                  autoPlay
+                  className="aspect-video max-h-40 w-64 object-cover"
+                />
+                <figcaption className="px-2 py-1 text-[10px] text-neutral-500">
+                  {video.title}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      )}
 
       {embeddedImages.length > 0 && (
         <div className="rounded-xl border border-neutral-800 bg-neutral-950/60 p-4">

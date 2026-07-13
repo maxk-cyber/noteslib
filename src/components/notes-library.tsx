@@ -32,6 +32,9 @@ type NotesLibraryProps = {
 };
 
 const NOTES_PER_PAGE = 8;
+const DEFAULT_CURSOR_SIZE = 22;
+const MIN_CURSOR_SIZE = 10;
+const MAX_CURSOR_SIZE = 72;
 
 export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
   const isPages = process.env.NEXT_PUBLIC_GITHUB_PAGES === "true";
@@ -39,7 +42,19 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [cursorSize, setCursorSize] = useState(DEFAULT_CURSOR_SIZE);
   const showcaseRef = useRef<HTMLElement>(null);
+
+  const handleCursorWheel = useCallback((event: React.WheelEvent) => {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    setCursorSize((value) =>
+      Math.min(
+        MAX_CURSOR_SIZE,
+        Math.max(MIN_CURSOR_SIZE, value - event.deltaY * 0.04),
+      ),
+    );
+  }, []);
 
   const refresh = useCallback(async () => {
     if (isPages) {
@@ -131,10 +146,16 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
 
       <main
         ref={showcaseRef}
+        onWheel={handleCursorWheel}
         className="relative flex flex-1 cursor-none flex-col items-center justify-center overflow-hidden"
       >
         <CrowdBackdrop />
-        <GraffitiCursor active={isHovered} containerRef={showcaseRef} theme="green" size="small" />
+        <GraffitiCursor
+          active={isHovered}
+          containerRef={showcaseRef}
+          theme="green"
+          sizePx={cursorSize}
+        />
 
         {notes.length === 0 ? (
           <div className="flex cursor-auto flex-col items-center gap-4 text-neutral-500">

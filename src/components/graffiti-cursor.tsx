@@ -1,20 +1,14 @@
 "use client";
 
 import { motion, useSpring } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type GraffitiCursorProps = {
   active: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
   theme?: "red" | "purple" | "yellow" | "green";
-  size?: "default" | "small" | "tiny";
+  sizePx?: number;
 };
-
-const cursorSizes = {
-  default: { box: 32, offset: 16, icon: "h-2.5 w-2.5" },
-  small: { box: 22, offset: 11, icon: "h-2 w-2" },
-  tiny: { box: 14, offset: 7, icon: "h-1.5 w-1.5" },
-} as const;
 
 const cursorColors = {
   red: "bg-red-500",
@@ -23,13 +17,22 @@ const cursorColors = {
   green: "bg-emerald-400",
 };
 
+function iconClassForSize(px: number) {
+  if (px >= 28) return "h-2.5 w-2.5";
+  if (px >= 18) return "h-2 w-2";
+  return "h-1.5 w-1.5";
+}
+
 export function GraffitiCursor({
   active,
   containerRef,
   theme = "red",
-  size = "default",
+  sizePx = 22,
 }: GraffitiCursorProps) {
-  const dimensions = cursorSizes[size];
+  const box = Math.max(8, Math.min(96, sizePx));
+  const offset = box / 2;
+  const iconClass = useMemo(() => iconClassForSize(box), [box]);
+
   const [visible, setVisible] = useState(false);
   const cursorX = useSpring(0, { stiffness: 500, damping: 40, mass: 0.6 });
   const cursorY = useSpring(0, { stiffness: 500, damping: 40, mass: 0.6 });
@@ -39,10 +42,10 @@ export function GraffitiCursor({
     (e: MouseEvent) => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      cursorX.set(e.clientX - rect.left - dimensions.offset);
-      cursorY.set(e.clientY - rect.top - dimensions.offset);
+      cursorX.set(e.clientX - rect.left - offset);
+      cursorY.set(e.clientY - rect.top - offset);
     },
-    [containerRef, cursorX, cursorY, dimensions.offset],
+    [containerRef, cursorX, cursorY, offset],
   );
 
   useEffect(() => {
@@ -74,8 +77,8 @@ export function GraffitiCursor({
         x: cursorX,
         y: cursorY,
         scale,
-        width: dimensions.box,
-        height: dimensions.box,
+        width: box,
+        height: box,
         transformOrigin: "center center",
       }}
     >
@@ -85,7 +88,7 @@ export function GraffitiCursor({
         height="16"
         viewBox="0 0 16 16"
         fill="none"
-        className={dimensions.icon}
+        className={iconClass}
         aria-hidden
       >
         <path

@@ -15,6 +15,7 @@ import { GraffitiCursor } from "@/components/graffiti-cursor";
 import { GraffitiTitle } from "@/components/graffiti-title";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { SectionHeaderShowcase } from "@/components/section-header-showcase";
+import { SectionNumberStrip } from "@/components/section-number-strip";
 import { PaginationBar } from "@/components/pagination-bar";
 import { SectionThumb } from "@/components/section-thumb";
 import { notePreview } from "@/lib/note-preview";
@@ -30,6 +31,9 @@ const SECTIONS_PER_PAGE = 6;
 const STRIP_PAGE_SIZE = 8;
 const MIN_ZOOM = 0.75;
 const MAX_ZOOM = 2.25;
+const DEFAULT_CURSOR_SIZE = 22;
+const MIN_CURSOR_SIZE = 10;
+const MAX_CURSOR_SIZE = 72;
 
 type WorkspaceMode = "overview" | "focus" | "edit";
 
@@ -68,6 +72,7 @@ export function NoteWorkspace({
   const [editHover, setEditHover] = useState(false);
   const [stripHovered, setStripHovered] = useState(false);
   const [sectionEngaged, setSectionEngaged] = useState(false);
+  const [cursorSize, setCursorSize] = useState(DEFAULT_CURSOR_SIZE);
 
   useEffect(() => {
     setSections(parseNoteSections(content));
@@ -132,12 +137,24 @@ export function NoteWorkspace({
       if (mode !== "focus") return;
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
+      event.stopPropagation();
       setZoom((value) =>
         Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value - event.deltaY * 0.002)),
       );
     },
     [mode],
   );
+
+  const handleCursorWheel = useCallback((event: React.WheelEvent) => {
+    if (!event.ctrlKey && !event.metaKey) return;
+    event.preventDefault();
+    setCursorSize((value) =>
+      Math.min(
+        MAX_CURSOR_SIZE,
+        Math.max(MIN_CURSOR_SIZE, value - event.deltaY * 0.04),
+      ),
+    );
+  }, []);
 
   const applySectionDraft = useCallback(() => {
     if (!activeSection) return;
@@ -165,13 +182,14 @@ export function NoteWorkspace({
       ref={viewportRef}
       onMouseEnter={() => setCursorActive(true)}
       onMouseLeave={() => setCursorActive(false)}
+      onWheel={handleCursorWheel}
       className="min-h-screen cursor-none bg-[#080808] pt-16 text-white"
     >
       <GraffitiCursor
         active={cursorActive && !(mode === "edit" && editHover)}
         containerRef={viewportRef}
         theme="green"
-        size={mode === "edit" ? "tiny" : "small"}
+        sizePx={cursorSize}
       />
 
       <div className={`px-6 pt-8 pb-4 text-center ${fontClass ?? ""}`}>
@@ -188,6 +206,11 @@ export function NoteWorkspace({
 
       <div className="px-4 pb-2 md:px-6">
         <div className="mx-auto max-w-6xl">
+          <SectionNumberStrip
+            count={sections.length}
+            activeIndex={activeIndex}
+            onSelect={selectSection}
+          />
           <div
             className="mb-3 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto"
             onMouseEnter={() => setStripHovered(true)}
@@ -372,9 +395,7 @@ export function NoteWorkspace({
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      setActiveIndex((index) => Math.max(0, index - 1))
-                    }
+                    onClick={() => selectSection(Math.max(0, activeIndex - 1))}
                     disabled={activeIndex <= 0}
                     className="rounded-full border border-neutral-800 px-3 py-1 text-[10px] tracking-widest text-neutral-400 uppercase disabled:opacity-30"
                   >
@@ -383,8 +404,8 @@ export function NoteWorkspace({
                   <button
                     type="button"
                     onClick={() =>
-                      setActiveIndex((index) =>
-                        Math.min(sections.length - 1, index + 1),
+                      selectSection(
+                        Math.min(sections.length - 1, activeIndex + 1),
                       )
                     }
                     disabled={activeIndex >= sections.length - 1}

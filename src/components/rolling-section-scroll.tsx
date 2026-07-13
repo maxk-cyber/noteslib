@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import { Minus, Plus, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MarkdownPreview } from "@/components/markdown-preview";
@@ -19,12 +19,27 @@ type Pan = { x: number; y: number };
 type DragMode = "orbit" | "pan";
 
 function cylinderStep(count: number) {
-  return 360 / Math.max(count, 1);
+  if (count <= 1) return 0;
+  return 180 / count;
 }
 
 function cylinderRadius(count: number) {
-  const stepRad = (Math.PI * 2) / Math.max(count, 1);
-  return Math.max(380, 220 / Math.tan(stepRad / 2));
+  if (count <= 1) return 420;
+  const stepRad = Math.PI / count;
+  return Math.max(360, 240 / Math.tan(stepRad / 2));
+}
+
+function snapProgress(value: number, count: number) {
+  if (count <= 1) return 0;
+  if (value >= 0.985) return 1;
+  if (value <= 0.015) return 0;
+  const segments = count - 1;
+  return Math.round(value * segments) / segments;
+}
+
+function panelRotationDeg(progress: number, count: number, step: number) {
+  if (count <= 1) return 0;
+  return progress * (count - 1) * step;
 }
 
 export function RollingSectionScroll({
@@ -44,35 +59,47 @@ export function RollingSectionScroll({
     mode: "orbit" as DragMode,
   });
   const isDraggingRef = useRef(false);
+  const snapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const count = Math.max(faces.length, 1);
   const step = cylinderStep(count);
   const radius = cylinderRadius(count);
-  const totalRotation = (count - 1) * step;
 
   const [progress, setProgress] = useState(0);
+  const panelRotateX = panelRotationDeg(progress, count, step);
+  const hintOpacity = Math.max(0, 1 - progress / 0.12);
   const [zoom, setZoom] = useState(1);
   const [orbit, setOrbit] = useState<Orbit>({ x: 0, y: 0 });
   const [pan, setPan] = useState<Pan>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<DragMode>("orbit");
 
-  const progressMV = useMotionValue(0);
-  const smoothProgress = useSpring(progressMV, {
-    stiffness: 110,
-    damping: 24,
-    mass: 0.35,
-  });
-  const panelRotation = useTransform(smoothProgress, [0, 1], [0, totalRotation]);
-  const hintOpacity = useTransform(smoothProgress, [0, 0.12], [1, 0]);
+  const setProgressSnapped = useCallback(
+    (value: number | ((current: number) => number)) => {
+      setProgress((current) => {
+        const next = typeof value === "function" ? value(current) : value;
+        return snapProgress(Math.min(1, Math.max(0, next)), count);
+      });
+    },
+    [count],
+  );
 
-  useEffect(() => {
-    progressMV.set(progress);
-  }, [progress, progressMV]);
+  const nudgeProgress = useCallback(
+    (delta: number) => {
+      setProgress((value) => {
+        const raw = Math.min(1, Math.max(0, value + delta));
+        return raw;
+      });
+    },
+    [],
+  );
 
-  const nudgeProgress = useCallback((delta: number) => {
-    setProgress((value) => Math.min(1, Math.max(0, value + delta)));
-  }, []);
+  const scheduleSnap = useCallback(() => {
+    if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
+    snapTimerRef.current = setTimeout(() => {
+      setProgress((value) => snapProgress(value, count));
+    }, 120);
+  }, [count]);
 
   const nudgeZoom = useCallback((delta: number) => {
     setZoom((value) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, value + delta)));
@@ -97,12 +124,16 @@ export function RollingSectionScroll({
         return;
       }
 
-      nudgeProgress(event.deltaY * 0.0018);
+      nudgeProgress(event.deltaY * 0.0022);
+      scheduleSnap();
     };
 
     root.addEventListener("wheel", onWheel, { passive: false });
-    return () => root.removeEventListener("wheel", onWheel);
-  }, [nudgeProgress, nudgeZoom]);
+    return () => {
+      root.removeEventListener("wheel", onWheel);
+      if (snapTimerRef.current) clearTimeout(snapTimerRef.current);
+    };
+  }, [nudgeProgress, nudgeZoom, scheduleSnap]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -116,7 +147,7 @@ export function RollingSectionScroll({
         if (event.shiftKey) {
           setPan((value) => ({ ...value, y: value.y - 36 }));
         } else {
-          nudgeProgress(0.08);
+          setProgressSnapped((value) => Math.min(1, value + 1 / Math.max(count - 1, 1)));
         }
         return;
       }
@@ -125,8 +156,18 @@ export function RollingSectionScroll({
         if (event.shiftKey) {
           setPan((value) => ({ ...value, y: value.y + 36 }));
         } else {
-          nudgeProgress(-0.08);
+          setProgressSnapped((value) => Math.max(0, value - 1 / Math.max(count - 1, 1)));
         }
+        return;
+      }
+      if (event.key === "Home") {
+        event.preventDefault();
+        setProgress(0);
+        return;
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        setProgress(1);
         return;
       }
       if (event.key === "ArrowLeft" && event.shiftKey) {
@@ -155,7 +196,7 @@ export function RollingSectionScroll({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [nudgeProgress, nudgeZoom, onClose, resetView]);
+  }, [count, nudgeZoom, onClose, resetView, setProgressSnapped]);
 
   const onViewportPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -269,12 +310,12 @@ export function RollingSectionScroll({
       </div>
 
       <div className="relative min-h-0 flex-1">
-        <motion.p
+        <p
           style={{ opacity: hintOpacity }}
-          className="pointer-events-none absolute top-4 right-0 left-0 z-10 text-center text-[10px] tracking-[0.3em] text-neutral-600 uppercase"
+          className="pointer-events-none absolute top-4 right-0 left-0 z-10 text-center text-[10px] tracking-[0.3em] text-neutral-600 uppercase transition-opacity duration-200"
         >
-          Drag to twist · Shift+drag to move · Scroll to roll · Ctrl+wheel zoom
-        </motion.p>
+          Drag twist · Shift+drag move · Scroll roll · End jumps to last panel
+        </p>
 
         <div
           ref={viewportRef}
@@ -322,8 +363,9 @@ export function RollingSectionScroll({
                 className="relative h-full w-full"
               >
               <motion.div
+                animate={{ rotateX: panelRotateX }}
+                transition={{ type: "spring", stiffness: 180, damping: 26 }}
                 style={{
-                  rotateX: panelRotation,
                   transformStyle: "preserve-3d",
                   WebkitTransformStyle: "preserve-3d",
                 }}

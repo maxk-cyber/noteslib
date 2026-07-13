@@ -245,12 +245,7 @@ export function NoteWorkspace({
 
       <div className="px-4 pb-2 md:px-6">
         <div className="mx-auto max-w-6xl">
-          <SectionHeaderShowcase
-            sectionTitle={activeSection.title}
-            hovered={cursorActive}
-          />
-
-          <div className="mb-3 mt-4 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto">
+          <div className="mb-3 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto">
             {pagedStrip.items.map((section) => {
               const index = sections.findIndex((item) => item.id === section.id);
               return (
@@ -273,6 +268,12 @@ export function NoteWorkspace({
               label="Sections"
             />
           )}
+
+          <SectionHeaderShowcase
+            sectionTitle={activeSection.title}
+            hovered={cursorActive}
+            fontClass={fontClass}
+          />
         </div>
       </div>
 

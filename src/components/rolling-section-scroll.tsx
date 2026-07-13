@@ -15,6 +15,8 @@ const MIN_ZOOM = 0.55;
 const MAX_ZOOM = 2.75;
 
 type Orbit = { x: number; y: number };
+type Pan = { x: number; y: number };
+type DragMode = "orbit" | "pan";
 
 function cylinderStep(count: number) {
   return 360 / Math.max(count, 1);
@@ -32,7 +34,15 @@ export function RollingSectionScroll({
 }: RollingSectionScrollProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
-  const dragOrigin = useRef({ x: 0, y: 0, orbitX: 0, orbitY: 0 });
+  const dragOrigin = useRef({
+    x: 0,
+    y: 0,
+    orbitX: 0,
+    orbitY: 0,
+    panX: 0,
+    panY: 0,
+    mode: "orbit" as DragMode,
+  });
   const isDraggingRef = useRef(false);
 
   const count = Math.max(faces.length, 1);
@@ -43,7 +53,9 @@ export function RollingSectionScroll({
   const [progress, setProgress] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [orbit, setOrbit] = useState<Orbit>({ x: 0, y: 0 });
+  const [pan, setPan] = useState<Pan>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [dragMode, setDragMode] = useState<DragMode>("orbit");
 
   const progressMV = useMotionValue(0);
   const smoothProgress = useSpring(progressMV, {
@@ -69,6 +81,7 @@ export function RollingSectionScroll({
   const resetView = useCallback(() => {
     setZoom(1);
     setOrbit({ x: 0, y: 0 });
+    setPan({ x: 0, y: 0 });
   }, []);
 
   useEffect(() => {
@@ -100,11 +113,31 @@ export function RollingSectionScroll({
       }
       if (event.key === "ArrowDown" || event.key === "PageDown") {
         event.preventDefault();
-        nudgeProgress(0.08);
+        if (event.shiftKey) {
+          setPan((value) => ({ ...value, y: value.y - 36 }));
+        } else {
+          nudgeProgress(0.08);
+        }
+        return;
       }
       if (event.key === "ArrowUp" || event.key === "PageUp") {
         event.preventDefault();
-        nudgeProgress(-0.08);
+        if (event.shiftKey) {
+          setPan((value) => ({ ...value, y: value.y + 36 }));
+        } else {
+          nudgeProgress(-0.08);
+        }
+        return;
+      }
+      if (event.key === "ArrowLeft" && event.shiftKey) {
+        event.preventDefault();
+        setPan((value) => ({ ...value, x: value.x + 36 }));
+        return;
+      }
+      if (event.key === "ArrowRight" && event.shiftKey) {
+        event.preventDefault();
+        setPan((value) => ({ ...value, x: value.x - 36 }));
+        return;
       }
       if (event.key === "+" || event.key === "=") {
         event.preventDefault();
@@ -126,19 +159,25 @@ export function RollingSectionScroll({
 
   const onViewportPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.button !== 0) return;
+      const panDrag = event.shiftKey || event.button === 1;
+      if (!panDrag && event.button !== 0) return;
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
       isDraggingRef.current = true;
       setIsDragging(true);
+      const mode: DragMode = panDrag ? "pan" : "orbit";
+      setDragMode(mode);
       dragOrigin.current = {
         x: event.clientX,
         y: event.clientY,
         orbitX: orbit.x,
         orbitY: orbit.y,
+        panX: pan.x,
+        panY: pan.y,
+        mode,
       };
     },
-    [orbit.x, orbit.y],
+    [orbit.x, orbit.y, pan.x, pan.y],
   );
 
   const onViewportPointerMove = useCallback(
@@ -146,6 +185,15 @@ export function RollingSectionScroll({
       if (!isDraggingRef.current) return;
       const dx = event.clientX - dragOrigin.current.x;
       const dy = event.clientY - dragOrigin.current.y;
+
+      if (dragOrigin.current.mode === "pan") {
+        setPan({
+          x: dragOrigin.current.panX + dx,
+          y: dragOrigin.current.panY + dy,
+        });
+        return;
+      }
+
       setOrbit({
         y: dragOrigin.current.orbitY + dx * 0.4,
         x: Math.min(62, Math.max(-62, dragOrigin.current.orbitX - dy * 0.28)),
@@ -225,12 +273,14 @@ export function RollingSectionScroll({
           style={{ opacity: hintOpacity }}
           className="pointer-events-none absolute top-4 right-0 left-0 z-10 text-center text-[10px] tracking-[0.3em] text-neutral-600 uppercase"
         >
-          Drag to twist · Scroll to roll · Ctrl+wheel to zoom
+          Drag to twist · Shift+drag to move · Scroll to roll · Ctrl+wheel zoom
         </motion.p>
 
         <div
           ref={viewportRef}
-          className="flex h-full cursor-grab items-center justify-center px-4 py-6 active:cursor-grabbing md:px-8"
+          className={`flex h-full items-center justify-center px-4 py-6 md:px-8 ${
+            dragMode === "pan" ? "cursor-move" : "cursor-grab active:cursor-grabbing"
+          }`}
           onPointerDown={onViewportPointerDown}
           onPointerMove={onViewportPointerMove}
           onPointerUp={endViewportDrag}
@@ -246,22 +296,31 @@ export function RollingSectionScroll({
             }}
           >
             <motion.div
-              animate={{
-                scale: zoom,
-                rotateX: orbit.x,
-                rotateY: orbit.y,
-              }}
+              animate={{ x: pan.x, y: pan.y }}
               transition={
-                isDragging
+                isDragging && dragMode === "pan"
                   ? { duration: 0 }
                   : { type: "spring", stiffness: 140, damping: 24 }
               }
-              style={{
-                transformStyle: "preserve-3d",
-                WebkitTransformStyle: "preserve-3d",
-              }}
               className="relative h-full w-full"
             >
+              <motion.div
+                animate={{
+                  scale: zoom,
+                  rotateX: orbit.x,
+                  rotateY: orbit.y,
+                }}
+                transition={
+                  isDragging && dragMode === "orbit"
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 140, damping: 24 }
+                }
+                style={{
+                  transformStyle: "preserve-3d",
+                  WebkitTransformStyle: "preserve-3d",
+                }}
+                className="relative h-full w-full"
+              >
               <motion.div
                 style={{
                   rotateX: panelRotation,
@@ -290,6 +349,7 @@ export function RollingSectionScroll({
                   </div>
                 ))}
               </motion.div>
+              </motion.div>
             </motion.div>
           </div>
         </div>
@@ -303,8 +363,9 @@ export function RollingSectionScroll({
           />
         </div>
         <p className="text-center text-[10px] tracking-[0.25em] text-neutral-600 uppercase">
-          Panel {activeFace} / {faces.length} · Tilt{" "}
-          {Math.round(orbit.x)}° · Twist {Math.round(orbit.y)}° · 0 resets view
+          Panel {activeFace} / {faces.length} · Move {Math.round(pan.x)},{" "}
+          {Math.round(pan.y)} · Tilt {Math.round(orbit.x)}° · Twist{" "}
+          {Math.round(orbit.y)}° · 0 resets
         </p>
       </div>
     </div>

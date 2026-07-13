@@ -190,14 +190,14 @@ export function VideoPopOver({ src, title, onClose }: VideoPopOverProps) {
   return (
     <div
       data-3d-overlay
-      className="fixed inset-0 z-[130] flex cursor-none items-center justify-center p-4 md:p-8"
+      className="pointer-events-none fixed inset-0 z-[130] flex cursor-none items-center justify-center p-4 md:p-8"
     >
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="absolute inset-0 bg-black/90 backdrop-blur-lg"
+        className="pointer-events-auto absolute inset-0 bg-black/90 backdrop-blur-lg"
       >
         <button
           type="button"
@@ -226,7 +226,7 @@ export function VideoPopOver({ src, title, onClose }: VideoPopOverProps) {
           stiffness: 100,
           damping: 20,
         }}
-        className="relative z-10 aspect-video w-full max-w-7xl"
+        className="pointer-events-auto relative z-10 aspect-video w-full max-w-7xl"
         onClick={(event) => event.stopPropagation()}
       >
         <NoteVideoPlayer src={src} title={title} />

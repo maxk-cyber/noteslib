@@ -59,9 +59,15 @@ export function ScrollVisualViewerProvider({
 
   const openVisual = useCallback(
     (visual: ScrollVisual) => {
+      const index = findVisualIndex(visuals, visual);
+      if (index >= 0) {
+        setActiveVisualIndex(index);
+        return;
+      }
+
       const resolved = resolveScrollVisual(visuals, visual);
-      const index = findVisualIndex(visuals, resolved);
-      setActiveVisualIndex(index);
+      const resolvedIndex = findVisualIndex(visuals, resolved);
+      setActiveVisualIndex(resolvedIndex >= 0 ? resolvedIndex : 0);
     },
     [visuals],
   );
@@ -184,17 +190,17 @@ function ScrollVisualLightbox({
   return (
     <div
       data-3d-overlay
-      className="fixed inset-0 z-[120] flex cursor-none items-center justify-center p-4 md:p-8"
+      className="pointer-events-none fixed inset-0 z-[120] flex cursor-none items-center justify-center p-4 md:p-8"
       role="dialog"
       aria-modal="true"
     >
       <button
         type="button"
         aria-label="Close diagram viewer"
-        className="absolute inset-0 bg-black/90"
+        className="pointer-events-auto absolute inset-0 bg-black/90"
         onClick={onClose}
       />
-      <div className="relative z-10 flex max-h-[min(92vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-neutral-800 bg-[#0a0a0a] shadow-2xl">
+      <div className="pointer-events-auto relative z-10 flex max-h-[min(92vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[2rem] border border-neutral-800 bg-[#0a0a0a] shadow-2xl">
         <div className="flex items-center justify-between gap-3 border-b border-neutral-900 px-5 py-4">
           <div>
             <p className="text-[10px] tracking-[0.3em] text-emerald-400/80 uppercase">

@@ -275,6 +275,12 @@ function RollingSectionScrollBody({
 
       const panDrag = event.shiftKey || event.button === 1;
       if (!panDrag && event.button !== 0) return;
+
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest("[data-diagram-hit]")) {
+        return;
+      }
+
       event.preventDefault();
       event.currentTarget.setPointerCapture(event.pointerId);
       isDraggingRef.current = true;
@@ -436,10 +442,9 @@ function RollingSectionScrollBody({
                 }}
                 className="relative h-full w-full"
               >
-              <motion.div
-                animate={{ rotateX: panelRotateX }}
-                transition={{ type: "spring", stiffness: 180, damping: 26 }}
+              <div
                 style={{
+                  transform: `rotateX(${panelRotateX}deg)`,
                   transformStyle: "preserve-3d",
                   WebkitTransformStyle: "preserve-3d",
                 }}
@@ -469,7 +474,7 @@ function RollingSectionScrollBody({
                     </div>
                   </div>
                 ))}
-              </motion.div>
+              </div>
               </motion.div>
             </motion.div>
           </div>

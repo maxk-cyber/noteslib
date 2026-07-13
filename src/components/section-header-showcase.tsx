@@ -1,33 +1,25 @@
 "use client";
 
-import { GraffitiTitle } from "@/components/graffiti-title";
+import { SkiperHoverTitle } from "@/components/skiper-hover-title";
 
 type SectionHeaderShowcaseProps = {
-  sectionTitle: string;
-  hovered?: boolean;
-  fontClass?: string;
+  /** Shown at rest (like Skiper6 defaultName). */
+  defaultText: string;
+  /** Shown when hovering section thumbs. */
+  hoverText: string;
+  stripHovered: boolean;
 };
 
-/**
- * Skiper6 center stage: the same graffiti letter animation as the preview
- * video, but driven by the active section title (no mp4 overlay).
- */
 export function SectionHeaderShowcase({
-  sectionTitle,
-  hovered = false,
-  fontClass,
+  defaultText,
+  hoverText,
+  stripHovered,
 }: SectionHeaderShowcaseProps) {
+  const text = stripHovered ? hoverText : defaultText;
+
   return (
-    <div
-      className={`relative mx-auto mt-4 flex min-h-[20vh] w-full items-center justify-center px-2 md:min-h-[24vh] ${fontClass ?? ""}`}
-    >
-      <GraffitiTitle
-        key={sectionTitle}
-        text={sectionTitle.toUpperCase()}
-        hovered={hovered}
-        variant="header"
-        theme="green"
-      />
+    <div className="relative mx-auto mt-4 w-full px-2">
+      <SkiperHoverTitle text={text} active={stripHovered} />
     </div>
   );
 }

@@ -66,6 +66,7 @@ export function NoteWorkspace({
   const [saving, setSaving] = useState(false);
   const [cursorActive, setCursorActive] = useState(false);
   const [editHover, setEditHover] = useState(false);
+  const [stripHovered, setStripHovered] = useState(false);
 
   useEffect(() => {
     setSections(parseNoteSections(content));
@@ -245,7 +246,11 @@ export function NoteWorkspace({
 
       <div className="px-4 pb-2 md:px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-3 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto">
+          <div
+            className="mb-3 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto"
+            onMouseEnter={() => setStripHovered(true)}
+            onMouseLeave={() => setStripHovered(false)}
+          >
             {pagedStrip.items.map((section) => {
               const index = sections.findIndex((item) => item.id === section.id);
               return (
@@ -270,9 +275,9 @@ export function NoteWorkspace({
           )}
 
           <SectionHeaderShowcase
-            sectionTitle={activeSection.title}
-            hovered={cursorActive}
-            fontClass={fontClass}
+            defaultText={title}
+            hoverText={activeSection.title}
+            stripHovered={stripHovered}
           />
         </div>
       </div>

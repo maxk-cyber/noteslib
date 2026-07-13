@@ -23,6 +23,12 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## GitHub Pages (read-only demo)
+
+Pushes to `main` deploy a static read-only build to **https://maxk-cyber.github.io/noteslib/**
+
+Add/delete are disabled on Pages (no server). Run locally for full CRUD.
+
 ## Routes
 
 | Path | Description |

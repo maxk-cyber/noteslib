@@ -11,9 +11,9 @@ type GraffitiCursorProps = {
 };
 
 const cursorSizes = {
-  default: { box: 120, offset: 60, icon: "h-5 w-5" },
-  small: { box: 36, offset: 18, icon: "h-3 w-3" },
-  tiny: { box: 18, offset: 9, icon: "h-2 w-2" },
+  default: { box: 32, offset: 16, icon: "h-2.5 w-2.5" },
+  small: { box: 22, offset: 11, icon: "h-2 w-2" },
+  tiny: { box: 14, offset: 7, icon: "h-1.5 w-1.5" },
 } as const;
 
 const cursorColors = {

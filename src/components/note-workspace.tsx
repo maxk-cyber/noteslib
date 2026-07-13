@@ -171,7 +171,7 @@ export function NoteWorkspace({
         active={cursorActive && !(mode === "edit" && editHover)}
         containerRef={viewportRef}
         theme="green"
-        size={mode === "edit" ? "tiny" : "default"}
+        size={mode === "edit" ? "tiny" : "small"}
       />
 
       <div className="border-b border-neutral-900/80 px-4 py-3 md:px-6">

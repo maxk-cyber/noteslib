@@ -35,6 +35,7 @@ export function NoteReader({
         active={cursorActive}
         containerRef={viewportRef}
         theme="green"
+        size="small"
       />
 
       <div className={`px-6 pt-10 pb-8 text-center ${fontClass ?? ""}`}>

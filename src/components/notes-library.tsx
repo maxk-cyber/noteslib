@@ -134,7 +134,7 @@ export function NotesLibrary({ initialNotes, fontClass }: NotesLibraryProps) {
         className="relative flex flex-1 cursor-none flex-col items-center justify-center overflow-hidden"
       >
         <CrowdBackdrop />
-        <GraffitiCursor active={isHovered} containerRef={showcaseRef} theme="green" />
+        <GraffitiCursor active={isHovered} containerRef={showcaseRef} theme="green" size="small" />
 
         {notes.length === 0 ? (
           <div className="flex cursor-auto flex-col items-center gap-4 text-neutral-500">

@@ -26,7 +26,10 @@ function cylinderStep(count: number) {
 function cylinderRadius(count: number) {
   if (count <= 1) return 420;
   const stepRad = (Math.PI * 2) / count;
-  return Math.max(380, 220 / Math.tan(stepRad / 2));
+  const geometryRadius = 220 / Math.tan(stepRad / 2);
+  const panelChordMin = 500;
+  const chordRadius = panelChordMin / (2 * Math.sin(stepRad / 2));
+  return Math.max(400, geometryRadius, chordRadius);
 }
 
 function snapProgress(value: number, count: number) {
@@ -381,12 +384,14 @@ export function RollingSectionScroll({
                       WebkitBackfaceVisibility: "hidden",
                     }}
                   >
-                    <div className="w-full max-w-4xl rounded-[2rem] bg-neutral-950/85 px-6 py-8 md:px-10 md:py-10">
-                      <MarkdownPreview
-                        variant="face3d"
-                        content={face}
-                        className="max-h-full w-full text-center"
-                      />
+                    <div className="flex w-full max-w-4xl max-h-[min(50vh,500px)] flex-col overflow-hidden rounded-[2rem] bg-neutral-950/85 shadow-[0_0_0_1px_rgba(38,38,38,0.9)]">
+                      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-6 md:px-8 md:py-8">
+                        <MarkdownPreview
+                          variant="face3d"
+                          content={face}
+                          className="w-full text-center"
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}

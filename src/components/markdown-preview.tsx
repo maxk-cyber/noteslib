@@ -157,7 +157,7 @@ function buildMarkdownComponents(variant: "default" | "face3d" = "default"): Com
       const text = getCodeText(children);
 
       if (isMermaidChart(className, text)) {
-        return <MermaidDiagram chart={text} />;
+        return <MermaidDiagram chart={text} compact={isFace} />;
       }
 
       if (!className) {
@@ -184,7 +184,7 @@ function buildMarkdownComponents(variant: "default" | "face3d" = "default"): Com
         <pre
           className={
             isFace
-              ? "my-3 rounded-lg border border-neutral-800 bg-neutral-950 p-3 font-mono text-xs leading-relaxed text-neutral-200"
+              ? "my-2 max-h-48 overflow-auto rounded-lg border border-neutral-800 bg-neutral-950 p-3 font-mono text-[11px] leading-relaxed text-neutral-200"
               : "my-8 overflow-x-auto rounded-xl border border-neutral-800 bg-neutral-950 p-5 font-mono text-sm leading-relaxed text-neutral-200"
           }
         >

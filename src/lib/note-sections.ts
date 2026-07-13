@@ -137,6 +137,33 @@ function isTableSeparator(line: string) {
   return /^\|?[\s:|-]+\|?\s*$/.test(line.trim());
 }
 
+function fenceMarker(line: string) {
+  return line.trim().match(/^(`{3,}|~{3,})/)?.[1] ?? null;
+}
+
+function isFenceStart(line: string) {
+  return Boolean(fenceMarker(line));
+}
+
+function isFenceEnd(line: string, opener: string) {
+  const end = fenceMarker(line);
+  const start = fenceMarker(opener);
+  return Boolean(end && start && end[0] === start[0] && end.length >= 3);
+}
+
+function isFencedBlock(block: string) {
+  return /^(`{3,}|~{3,})/m.test(block.trim());
+}
+
+function isMermaidBlock(block: string) {
+  const trimmed = block.trim();
+  return /^```mermaid\b/im.test(trimmed) || /^~~~mermaid\b/im.test(trimmed);
+}
+
+function isEmbeddedImageBlock(block: string) {
+  return /<img\s[^>]*src=["'][^"']+["'][^>]*>/i.test(block);
+}
+
 function splitMarkdownBlocks(text: string): string[] {
   const blocks: string[] = [];
   const lines = text.split("\n");
@@ -145,6 +172,22 @@ function splitMarkdownBlocks(text: string): string[] {
   while (i < lines.length) {
     if (!lines[i].trim()) {
       i++;
+      continue;
+    }
+
+    if (isFenceStart(lines[i])) {
+      const opener = fenceMarker(lines[i]) ?? "```";
+      const fenceLines = [lines[i]];
+      i++;
+      while (i < lines.length) {
+        fenceLines.push(lines[i]);
+        if (fenceLines.length > 1 && isFenceEnd(lines[i], opener)) {
+          i++;
+          break;
+        }
+        i++;
+      }
+      blocks.push(fenceLines.join("\n"));
       continue;
     }
 
@@ -182,6 +225,50 @@ function tableToScrollFaces(tableBlock: string): string[] {
   return rows.map((row) => [header, separator, row].join("\n"));
 }
 
+function facesFromBlocks(blocks: string[]): string[] {
+  if (blocks.length === 0) return [];
+
+  const faces: string[] = [];
+  let buffer = "";
+
+  const flushBuffer = () => {
+    if (!buffer.trim()) return;
+    faces.push(buffer.trim());
+    buffer = "";
+  };
+
+  for (const block of blocks) {
+    const isTable = block.includes("|") && isTableLine(block.split("\n")[0] ?? "");
+    const isDiagram =
+      isMermaidBlock(block) ||
+      isEmbeddedImageBlock(block) ||
+      (isFencedBlock(block) && block.length > 120);
+
+    if (isTable) {
+      flushBuffer();
+      faces.push(...tableToScrollFaces(block));
+      continue;
+    }
+
+    if (isDiagram) {
+      flushBuffer();
+      faces.push(block);
+      continue;
+    }
+
+    if (buffer.length + block.length > 520 && buffer) {
+      flushBuffer();
+      buffer = block;
+      continue;
+    }
+
+    buffer = buffer ? `${buffer}\n\n${block}` : block;
+  }
+
+  flushBuffer();
+  return faces;
+}
+
 /** Markdown chunks for 3D scroll — each face is a rendered preview panel. */
 export function sectionScrollFaces(body: string): string[] {
   const trimmed = body.trim();
@@ -189,39 +276,26 @@ export function sectionScrollFaces(body: string): string[] {
 
   const subsections = parseNoteSubsections(trimmed);
   if (subsections.length > 1) {
-    return subsections.map((subsection) => {
-      if (subsection.raw.startsWith("###")) return subsection.raw;
-      if (subsection.title === "Overview") return subsection.body;
-      return `### ${subsection.title}\n\n${subsection.body}`.trim();
+    return subsections.flatMap((subsection) => {
+      const faces = facesFromBlocks(splitMarkdownBlocks(subsection.body));
+      if (faces.length === 0) {
+        return [subsection.body.trim() || "*Empty subsection*"];
+      }
+
+      if (subsection.title === "Overview" || subsection.raw.startsWith("###")) {
+        return faces;
+      }
+
+      return faces.map((face, index) =>
+        index === 0 ? `### ${subsection.title}\n\n${face}`.trim() : face,
+      );
     });
   }
 
   const blocks = splitMarkdownBlocks(trimmed);
   if (blocks.length <= 1) return [trimmed];
 
-  const faces: string[] = [];
-  let buffer = "";
-
-  for (const block of blocks) {
-    const isTable = block.includes("|");
-    if (isTable) {
-      if (buffer) {
-        faces.push(buffer.trim());
-        buffer = "";
-      }
-      faces.push(...tableToScrollFaces(block));
-      continue;
-    }
-
-    if (buffer.length + block.length > 700 && buffer) {
-      faces.push(buffer.trim());
-      buffer = block;
-    } else {
-      buffer = buffer ? `${buffer}\n\n${block}` : block;
-    }
-  }
-
-  if (buffer) faces.push(buffer.trim());
+  const faces = facesFromBlocks(blocks);
   return faces.length > 0 ? faces : [trimmed];
 }
 

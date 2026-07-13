@@ -15,7 +15,6 @@ import { GraffitiCursor } from "@/components/graffiti-cursor";
 import { GraffitiTitle } from "@/components/graffiti-title";
 import { MarkdownPreview } from "@/components/markdown-preview";
 import { SectionHeaderShowcase } from "@/components/section-header-showcase";
-import { SectionNumberStrip } from "@/components/section-number-strip";
 import { PaginationBar } from "@/components/pagination-bar";
 import { SectionThumb } from "@/components/section-thumb";
 import { notePreview } from "@/lib/note-preview";
@@ -114,6 +113,58 @@ export function NoteWorkspace({
     setZoom(1);
   }, []);
 
+  useEffect(() => {
+    let digitBuffer = "";
+    let bufferTimer: ReturnType<typeof setTimeout>;
+
+    const resolveDigits = () => {
+      const sectionNum = parseInt(digitBuffer, 10);
+      digitBuffer = "";
+      if (sectionNum >= 1 && sectionNum <= sections.length) {
+        selectSection(sectionNum - 1);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+      if (/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+        digitBuffer += event.key;
+        clearTimeout(bufferTimer);
+        bufferTimer = setTimeout(resolveDigits, 450);
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        if (activeIndex > 0) selectSection(activeIndex - 1);
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        if (activeIndex < sections.length - 1) {
+          selectSection(activeIndex + 1);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      clearTimeout(bufferTimer);
+    };
+  }, [activeIndex, sections.length, selectSection]);
+
   const handleStripPageChange = useCallback(
     (nextPage: number) => {
       setStripPage(nextPage);
@@ -206,11 +257,6 @@ export function NoteWorkspace({
 
       <div className="px-4 pb-2 md:px-6">
         <div className="mx-auto max-w-6xl">
-          <SectionNumberStrip
-            count={sections.length}
-            activeIndex={activeIndex}
-            onSelect={selectSection}
-          />
           <div
             className="mb-3 flex min-h-[120px] items-center justify-center gap-1 overflow-x-auto"
             onMouseEnter={() => setStripHovered(true)}
